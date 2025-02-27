@@ -117,7 +117,7 @@ LALT_T(KC_Z),  KC_X,    KC_C,    KC_V,    LT(_FCT,KC_B),                      KC
     [_NUM] = LAYOUT_36keys(
       KC_TAB,    _______,    _______,      _______,  KC_ESC,                               KC_PPLS, KC_7,   KC_8,   KC_9,   KC_EQL,
       KC_LEFT,   KC_UP,      KC_DOWN,      KC_RIGHT, _______,                              KC_0,    KC_4,   KC_5,   KC_6,   KC_MINS,
-      KC_HOME,   KC_PAGE_UP, KC_PAGE_DOWN, KC_END,   _______,                              KC_MINS, KC_1,   KC_2,   KC_3,   KC_DOT,
+      LALT_T(KC_HOME),   KC_PAGE_UP, KC_PAGE_DOWN, KC_END,   _______,                              KC_MINS, KC_1,   KC_2,   KC_3,   LALT_T(KC_DOT),
                                           _______,  _______, _______,             _______, _______, _______                         
     ),
 
