@@ -1,0 +1,15 @@
+# This file intentionally left blank
+OS_DETECTION_ENABLE = yes
+DEFERRED_EXEC_ENABLE = yes
+
+TAP_DANCE_ENABLE = yes
+
+##TEST HAPTIC
+HAPTIC_ENABLE = yes
+HAPTIC_DRIVER = drv2605l
+##END TEST
+
+#RGBLIGHT_ENABLE = yes
+
+CONSOLE_ENABLE = yes
+
