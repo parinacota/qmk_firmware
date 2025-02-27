@@ -10,17 +10,6 @@
 //#include <rgblight.h>
 #include "drv2605l.h"
 
-
-static uint16_t trackpoint_timer;
-extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
-
-typedef enum tp_lock_dirs {
-  TP_FREE,
-  TP_LOCK_H,
-  TP_LOCK_V,
-} tp_lock_dirs_t;
-static tp_lock_dirs_t trackpoint_lock_dir;
-
 #define WINALT1(A) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A)));}
 #define WINALT2(A, B) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B)));}
 #define WINALT3(A, B, C) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B) SS_TAP(X_KP_ ## C)));}
@@ -43,7 +32,15 @@ static tp_lock_dirs_t trackpoint_lock_dir;
 bool macos_mode = false;
 
 //#define LED_INTERNAL  GP17
-#define PS2RESETPIN GP14
+static uint16_t trackpoint_timer;
+extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
+
+typedef enum tp_lock_dirs {
+  TP_FREE,
+  TP_LOCK_H,
+  TP_LOCK_V,
+} tp_lock_dirs_t;
+static tp_lock_dirs_t trackpoint_lock_dir;
 
 enum layers {
     _BAS,
@@ -542,8 +539,9 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) { // Whenever the TrackP
     if (trackpoint_lock_dir == TP_LOCK_H) mouse_report->y = 0;
     if (trackpoint_lock_dir == TP_LOCK_V) mouse_report->x = 0;
 
-    
 }
+
+
 
 void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO CHECK CLOCK RUNTIMES OVER THE DURATION THAT THE KEYBOARD IS POWERED ON
   if (trackpoint_timer && (timer_elapsed(trackpoint_timer) > MOUSE_LAYER_TIMEOUT)) { //If the time of both the TP timer
