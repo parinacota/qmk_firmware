@@ -80,7 +80,8 @@ void ps2_mouse_task(void) {
     uint8_t rcv;
     rcv = ps2_host_send(PS2_MOUSE_READ_DATA);
     if (rcv == PS2_ACK) {
-        mouse_report.buttons = ps2_host_recv_response();
+        // mouse_report.buttons = ps2_host_recv_response();
+        mouse_report.buttons = ps2_host_recv_response() | tp_buttons; //PS2 Patch : add "| tp_buttons";
         mouse_report.x       = ps2_host_recv_response();
         mouse_report.y       = ps2_host_recv_response();
 #    ifdef PS2_MOUSE_ENABLE_SCROLLING
@@ -93,7 +94,8 @@ void ps2_mouse_task(void) {
     }
 #else
     if (pbuf_has_data()) {
-        mouse_report.buttons = ps2_host_recv_response();
+        // mouse_report.buttons = ps2_host_recv_response();
+        mouse_report.buttons = ps2_host_recv_response()  | tp_buttons; //PS2 Patch : add "| tp_buttons"
         mouse_report.x       = ps2_host_recv_response();
         mouse_report.y       = ps2_host_recv_response();
 #    ifdef PS2_MOUSE_ENABLE_SCROLLING
@@ -102,7 +104,7 @@ void ps2_mouse_task(void) {
     } else {
         if (debug_mouse) print("ps2_mouse: fail to get mouse packet\n");
         /* return here to avoid updating the mouse button state */
-        return;
+        // return; // PS2 Patch (line commented)
     }
 #endif
 
