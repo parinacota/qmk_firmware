@@ -35,9 +35,6 @@ enum layers {
 
 enum custom_keycodes {
   MA_TOBASE = ME_LAST_EMUL,
-
-  ERGOL_KEY_CODES,
-  
   //FUNCTION LAYER
   ME_MICOFF,
   ME_PSCR,
@@ -328,8 +325,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (record->event.pressed) {
         switch (keycode) {
         // FUNCT
-          case ME_PSCR: if (emul_get_os() == EMUL_OS_OSX)      SHIFT(COMMAND(XKEY(X_4)))    else XKEY(X_PSCR);            break;
-          case ME_MICOFF: if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LGUI(SS_TAP(X_F4))); break;
+          case ME_PSCR:   if (emul_get_os() == EMUL_OS_OSX)   SHIFT(COMMAND(XKEY(X_5)))           else XKEY(X_PSCR);            break;
+          case ME_MICOFF: if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LGUI(SS_TAP(X_F4)));                               break;
           case SOL_TGGL:  solenoid_enable(!solenoid_enabled); break;
           case SOL_INC:   solenoid_ring_time_inc(); break;
           case SOL_DEC:   solenoid_ring_time_dec(); break;

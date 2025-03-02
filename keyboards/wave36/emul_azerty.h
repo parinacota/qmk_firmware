@@ -2,8 +2,8 @@
 
 #include <keymap_french.h>
 
-#define _EMUL_INITIAL_REPEAT_DELAY 300 
-#define _EMUL_REPEAT_DELAY 100
+#define _EMUL_INITIAL_REPEAT_DELAY 200 
+#define _EMUL_REPEAT_DELAY 70
 uint16_t _emul_initial_repeat_delay = _EMUL_INITIAL_REPEAT_DELAY;
 uint16_t _emul_repeat_delay = _EMUL_REPEAT_DELAY;
 bool _emul_repeat_active = false;
