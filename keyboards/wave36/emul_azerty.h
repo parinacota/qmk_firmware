@@ -1,9 +1,31 @@
 #pragma once
+// Emulate special characters for AZERTY layout
+// Usage:
+// 0. add these options in rules.mk:
+//      OS_DETECTION_ENABLE = yes
+//      DEFERRED_EXEC_ENABLE = yes
+// 1. Add <emul_azerty.h> to your keymap.c
+// 2. Add the following code to your config.h
+//      call emul_keyboard_post_init_user() in your keyboard_post_init_user() --> will detect the host OS -- 
+//      call process_record_user_emul(keycode, record) in your process_record_user() --> will emulate the keycodes
+//      call matrix_scan_user_emul() in your matrix_scan_user() --> needed for the repeatition of the keycodes (if used)
+// 3. define your custom keycodes in your keymap.c like this:
+//      enum custom_keycodes_emul {
+//         MY_FIRST_CUSTOM_KEYCODE = ME_LAST_EMUL, // ME_LAST_EMUL is the last keycode of the emul layer, that starts its counter with SAFE_RANGE
+//         ...
+//      }
+// 4. Use the ME_xxxx keycodes in your keymaps
+// 5. optionnaly:
+//      call emul_set_os() with the detected OS (result of detected_host_os())
+//      call emul_get_os() to get the current OS (EMUL_OS_WIN or EMUL_OS_OSX)
+//      use the keycodes ME_REPEAT_TOGGLE, ME_REPEAT_DEC, ME_REPEAT_INC to control key repeat
+// 6. Enjoy
 
-#include <keymap_french.h>
-
-#define _EMUL_INITIAL_REPEAT_DELAY 200 
+#define _EMUL_INITIAL_REPEAT_DELAY 300 
 #define _EMUL_REPEAT_DELAY 70
+#define _EMUL_REPEAT_DELAY_MIN 30
+#define _EMUL_REPEAT_DELAY_MAX 200
+
 uint16_t _emul_initial_repeat_delay = _EMUL_INITIAL_REPEAT_DELAY;
 uint16_t _emul_repeat_delay = _EMUL_REPEAT_DELAY;
 bool _emul_repeat_active = false;
@@ -37,6 +59,15 @@ emul_os_types emul_get_os(void) {
 bool emul_toggle_repeat(void) {
     _emul_repeat_enabled = !_emul_repeat_enabled;
     return _emul_repeat_enabled;
+}
+
+uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
+    emul_set_os(detected_host_os());
+    return 0;
+}
+
+void emul_keyboard_post_init_user(void) {
+    defer_exec(500, _emul_get_host_os, NULL);
 }
 
 enum custom_keycodes_emul {
@@ -119,7 +150,10 @@ enum custom_keycodes_emul {
     ME_SML2, 
     ME_SML3,
     
+    ME_COMMANDS,
     ME_REPEAT_TOGGLE,
+    ME_REPEAT_DEC,
+    ME_REPEAT_INC,
     ME_LAST_EMUL
 };
 
@@ -220,23 +254,24 @@ void _emul_send_key(uint16_t keycode) {
 }
 
 bool process_record_user_emul(uint16_t keycode, keyrecord_t *record) {
-    if (keycode > ME_FIRST_EMUL && keycode < ME_LAST_EMUL) {
-        if (record->event.pressed) {
-            if (keycode == ME_REPEAT_TOGGLE) {
-                emul_toggle_repeat();
-            } else {
-                _emul_send_key(keycode);
-                if (_emul_repeat_enabled) {
-                    _emul_last_keycode = keycode;
-                    _emul_repeat_timer = timer_read(); // Reset spam timer
-                    _emul_delay = _emul_initial_repeat_delay;
-                    _emul_repeat_active = true;
-                }
+    if (keycode > ME_FIRST_EMUL && keycode < ME_LAST_EMUL  && record->event.pressed) {
+        if (keycode > ME_COMMANDS) {
+            switch(keycode) {
+                case ME_REPEAT_TOGGLE: emul_toggle_repeat(); break;
+                case ME_REPEAT_DEC: _emul_repeat_delay = (_emul_repeat_delay > _EMUL_REPEAT_DELAY_MIN) ? _emul_repeat_delay - 10 : _EMUL_REPEAT_DELAY_MIN; break;
+                case ME_REPEAT_INC: _emul_repeat_delay = (_emul_repeat_delay < _EMUL_REPEAT_DELAY_MAX) ? _emul_repeat_delay + 10 : _EMUL_REPEAT_DELAY_MAX; break;
             }
         } else {
-            _emul_repeat_active = false; 
+            _emul_send_key(keycode);
+            if (_emul_repeat_enabled) {
+                _emul_last_keycode = keycode;
+                _emul_repeat_timer = timer_read(); // Reset spam timer
+                _emul_delay = _emul_initial_repeat_delay;
+                _emul_repeat_active = true;
+            }
         }
     } else {
+        //released, or other key
         _emul_repeat_active = false;
     }
     return true;

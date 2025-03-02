@@ -3,6 +3,7 @@
 
 #include QMK_KEYBOARD_H
 #include <ws2812.h>
+#include <keymap_french.h>
 #include <emul_azerty.h>
 // #include "drv2605l.h"
 
@@ -35,6 +36,7 @@ enum layers {
 
 enum custom_keycodes {
   MA_TOBASE = ME_LAST_EMUL,
+  MA_CMD_ALT_TAB,
   //FUNCTION LAYER
   ME_MICOFF,
   ME_PSCR,
@@ -50,21 +52,18 @@ typedef struct {
 } tap_dance_tap_hold_t;
 
 void tap_dance_tap_hold_finished(tap_dance_state_t *state, void *user_data) {
-    tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-
-    if (state->pressed) {
-        if (state->count == 1
+  tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
+  if (state->cojnt == 1
 #ifndef PERMISSIVE_HOLD
-            && !state->interrupted
+      && !state->interrupted
 #endif
-        ) {
-            register_code16(tap_hold->hold);
-            tap_hold->held = tap_hold->hold;
-        } else {
-            register_code16(tap_hold->tap);
-            tap_hold->held = tap_hold->tap;
-        }
-    }
+  ) {
+      register_code16(tap_hold->hold);
+      tap_hold->held = tap_hold->hold;
+  } else {
+      register_code16(tap_hold->tap);
+      tap_hold->held = tap_hold->tap;
+  }
 }
 
 void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
@@ -79,6 +78,33 @@ void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
 #define ACTION_TAP_DANCE_TAP_HOLD(tap, hold) \
     { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 
+void tap_dance_double_invert_finished(tap_dance_state_t *state, void *user_data) {
+  tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
+  // invert for OSX
+  if (emul_get_os() == EMUL_OS_OSX) {
+    uint16_t inv = tap_hold->tap;
+    tap_hold->tap = tap_hold->hold;
+    tap_hold->hold = inv;
+  }
+  if (state->count == 1) {
+      register_code16(tap_hold->tap);
+      tap_hold->held = tap_hold->tap;
+  } else {
+    register_code16(tap_hold->hold);
+    tap_hold->held = tap_hold->hold;
+  }
+}
+
+void tap_dance_double_invert_reset(tap_dance_state_t *state, void *user_data) {
+    tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
+    if (tap_hold->held) {
+        unregister_code16(tap_hold->held);
+        tap_hold->held = 0;
+    }
+}
+
+#define ACTION_TAP_DANCE_DOUBLE_INVERT(tap, hold) \
+    { .fn = {NULL, tap_dance_double_invert_finished, tap_dance_double_invert_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 // Tap dance enums
 enum {
     TD1_CTL_GUI,
@@ -89,7 +115,7 @@ enum {
 // Tap Dance definitions
 tap_dance_action_t tap_dance_actions[] = {
     // Tap once for Escape, twice for Caps Lock
-    [TD1_CTL_GUI] = ACTION_TAP_DANCE_DOUBLE(KC_LCTL, KC_LGUI),
+    [TD1_CTL_GUI] = ACTION_TAP_DANCE_DOUBLE_INVERT(KC_LCTL, KC_LGUI),
     [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
     [TD3_SLSH_LALT] = ACTION_TAP_DANCE_TAP_HOLD(S(KC_DOT), KC_LALT),
 };
@@ -159,24 +185,12 @@ uint32_t turn_off_led(uint32_t trigger_time, void *cb_arg) {
     return 0;
 }
 
-uint32_t get_host_os(uint32_t trigger_time, void *cb_arg) {
-  os_variant_t os = detected_host_os();
-  emul_set_os(os);
-  switch(emul_get_os()) {
-    case EMUL_OS_OSX: ws2812_set_color_all(0, 0, 255); break;
-    default: ws2812_set_color_all(255, 255, 255); break;
-  }
-  defer_exec(1500, turn_off_led, false);
-  solenoid_ring();
-  return 0;
-}
-
 void keyboard_post_init_user(void) {
   // turn off internal led + detect host os
   gpio_write_pin(LED_INTERNAL,false);
   //rgblight_sethsv_at(HSV_RED, 0);
   ws2812_set_color_all(255, 0, 0);
-  defer_exec(500, get_host_os, NULL);
+  emul_keyboard_post_init_user();
 }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -212,9 +226,9 @@ ME_ACIR,      FR_CCED,      ME_OE,        ME_OCIR,      FR_DEG,                 
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 FR_AGRV,      FR_EACU,      FR_EGRV,      ME_ECIR,      ME_NTILD,                                 ME_LQUOTFR,   ME_RQUOTFR,   ME_ICIR,      ME_ITRE,      FR_UGRV,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-ME_AE,        ME_SUP2,      ME_QCADR,     ME_SCADR,     ME_CADR,                                  ME_ETC,       ME_https,     XXXXXXX,      XXXXXXX,      ME_COPYR,
+ME_AE,        ME_SUP2,      ME_QCADR,     ME_SCADR,     LT(_FCT,ME_CADR),                         ME_ETC,       ME_https,     XXXXXXX,      XXXXXXX,      ME_COPYR,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          XXXXXXX,      OSL(_SDK),    XXXXXXX,      XXXXXXX,      ME_QUOTFR,    XXXXXXX        
+                                          _______,      OSL(_SDK),    XXXXXXX,      XXXXXXX,      ME_QUOTFR,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -226,7 +240,7 @@ ME_AGRVM,     ME_EACUM,     ME_EGRVM,     ME_ECIRM,     ME_NTILDM,              
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 ME_AEM,       ME_SUP3,      XXXXXXX,      XXXXXXX,      XXXXXXX,                                  XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      ME_RGSTRD,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX        
+                                          _______,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -248,7 +262,7 @@ KC_TAB,       ME_AT,        KC_SPC,       ME_TIL,       KC_ESC,                 
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 FR_1,         FR_2,         FR_3,         FR_4,         FR_5,                                     FR_6,         FR_7,         FR_8,         FR_9,         FR_0,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-A(KC_TAB),    FR_LPRN,      FR_RPRN,      ME_CIR,       ME_GRV,                                   ME_EQL,       ME_PLUS,      ME_MINS,      ME_ASTR,      FR_SLSH,
+MA_CMD_ALT_TAB,FR_LPRN,     FR_RPRN,      ME_CIR,       ME_GRV,                                   ME_EQL,       ME_PLUS,      ME_MINS,      ME_ASTR,      FR_SLSH,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           _______,      KC_LSFT,      _______,      _______,      _______,      _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -260,7 +274,7 @@ QK_REBOOT,    SOL_INC,      ME_REPEAT_TOGGLE,KC_BRIU,   KC_VOLU,                
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 QK_BOOTLOADER,SOL_DEC,      XXXXXXX,      KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-XXXXXXX,      SOL_TGGL,     XXXXXXX,      XXXXXXX,      XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
+XXXXXXX,      SOL_TGGL,     XXXXXXX,      XXXXXXX,      XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      ME_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      ME_MICOFF,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -324,9 +338,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       //OTHER THAN AZERTY EMUL
       if (record->event.pressed) {
         switch (keycode) {
+          case MA_CMD_ALT_TAB: if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LGUI(SS_TAP(X_TAB)));      else SEND_STRING(SS_LALT(SS_TAP(X_TAB)));   break;
         // FUNCT
-          case ME_PSCR:   if (emul_get_os() == EMUL_OS_OSX)   SHIFT(COMMAND(XKEY(X_5)))           else XKEY(X_PSCR);            break;
-          case ME_MICOFF: if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LGUI(SS_TAP(X_F4)));                               break;
+          case ME_PSCR:   if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LSFT(SS_LCMD(SS_TAP(X_4))));  else SEND_STRING(SS_TAP(X_PSCR));           break;
+          case ME_MICOFF: if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LCMD(SS_TAP(X_F4)));          else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));    break;
           case SOL_TGGL:  solenoid_enable(!solenoid_enabled); break;
           case SOL_INC:   solenoid_ring_time_inc(); break;
           case SOL_DEC:   solenoid_ring_time_dec(); break;
@@ -372,14 +387,13 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) { // Whenever the TrackP
         else
           trackpoint_lock_dir = TP_LOCK_V;
       }
-    } else {
+    } else {    
       trackpoint_lock_dir = TP_FREE;
     }
 
     //if locked
     if (trackpoint_lock_dir == TP_LOCK_H) mouse_report->y = 0;
     if (trackpoint_lock_dir == TP_LOCK_V) mouse_report->x = 0;
-
 }
 
 void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO CHECK CLOCK RUNTIMES OVER THE DURATION THAT THE KEYBOARD IS POWERED ON
