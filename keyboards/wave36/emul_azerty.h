@@ -66,6 +66,36 @@ uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
     return 0;
 }
 
+typedef struct {
+    uint16_t kc1;
+    uint16_t kc2;
+    uint16_t kc_held;
+} _emul_tap_dance_pair_invert_t;
+
+void _emul_tap_dance_pair_invert_on_each_tap(tap_dance_state_t *state, void *user_data) {
+    _emul_tap_dance_pair_invert_t *pair = (_emul_tap_dance_pair_invert_t *)user_data;
+    if (state->count == 2) {
+        pair->kc_held = (emul_get_os() == EMUL_OS_OSX ? pair->kc1 : pair->kc2);
+        register_code16(pair->kc_held);
+        state->finished = true;
+    }
+}
+
+void _emul_tap_dance_pair_invert_finished(tap_dance_state_t *state, void *user_data) {
+    _emul_tap_dance_pair_invert_t *pair = (_emul_tap_dance_pair_invert_t *)user_data;
+    pair->kc_held = (emul_get_os() == EMUL_OS_OSX ? pair->kc2 : pair->kc1);
+    register_code16(pair->kc_held);
+}
+
+void _emul_tap_dance_pair_invert_reset(tap_dance_state_t *state, void *user_data) {
+    _emul_tap_dance_pair_invert_t *pair = (_emul_tap_dance_pair_invert_t *)user_data;
+    if (state->count == 1) wait_ms(TAP_CODE_DELAY);
+    unregister_code16(pair->kc_held);
+}
+
+#define EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(kc1, kc2) \
+    { .fn = {_emul_tap_dance_pair_invert_on_each_tap, _emul_tap_dance_pair_invert_finished, _emul_tap_dance_pair_invert_reset, NULL}, .user_data = (void *)&((_emul_tap_dance_pair_invert_t){kc1, kc2}), }
+
 void emul_keyboard_post_init_user(void) {
     defer_exec(500, _emul_get_host_os, NULL);
 }

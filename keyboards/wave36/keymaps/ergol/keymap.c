@@ -53,7 +53,7 @@ typedef struct {
 
 void tap_dance_tap_hold_finished(tap_dance_state_t *state, void *user_data) {
   tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-  if (state->cojnt == 1
+  if (state->count == 1
 #ifndef PERMISSIVE_HOLD
       && !state->interrupted
 #endif
@@ -78,33 +78,7 @@ void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
 #define ACTION_TAP_DANCE_TAP_HOLD(tap, hold) \
     { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 
-void tap_dance_double_invert_finished(tap_dance_state_t *state, void *user_data) {
-  tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-  // invert for OSX
-  if (emul_get_os() == EMUL_OS_OSX) {
-    uint16_t inv = tap_hold->tap;
-    tap_hold->tap = tap_hold->hold;
-    tap_hold->hold = inv;
-  }
-  if (state->count == 1) {
-      register_code16(tap_hold->tap);
-      tap_hold->held = tap_hold->tap;
-  } else {
-    register_code16(tap_hold->hold);
-    tap_hold->held = tap_hold->hold;
-  }
-}
 
-void tap_dance_double_invert_reset(tap_dance_state_t *state, void *user_data) {
-    tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-    if (tap_hold->held) {
-        unregister_code16(tap_hold->held);
-        tap_hold->held = 0;
-    }
-}
-
-#define ACTION_TAP_DANCE_DOUBLE_INVERT(tap, hold) \
-    { .fn = {NULL, tap_dance_double_invert_finished, tap_dance_double_invert_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 // Tap dance enums
 enum {
     TD1_CTL_GUI,
@@ -115,7 +89,7 @@ enum {
 // Tap Dance definitions
 tap_dance_action_t tap_dance_actions[] = {
     // Tap once for Escape, twice for Caps Lock
-    [TD1_CTL_GUI] = ACTION_TAP_DANCE_DOUBLE_INVERT(KC_LCTL, KC_LGUI),
+    [TD1_CTL_GUI] = EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(KC_LCTL, KC_LGUI),
     [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
     [TD3_SLSH_LALT] = ACTION_TAP_DANCE_TAP_HOLD(S(KC_DOT), KC_LALT),
 };
