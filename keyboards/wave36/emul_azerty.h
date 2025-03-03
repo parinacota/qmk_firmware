@@ -283,7 +283,7 @@ void _emul_send_key(uint16_t keycode) {
     } // switch
 }
 
-bool process_record_user_emul(uint16_t keycode, keyrecord_t *record) {
+bool emul_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (keycode > ME_FIRST_EMUL && keycode < ME_LAST_EMUL  && record->event.pressed) {
         if (keycode > ME_COMMANDS) {
             switch(keycode) {
@@ -307,7 +307,7 @@ bool process_record_user_emul(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-void matrix_scan_user_emul(void) {
+void emul_matrix_scan_user(void) {
     if (_emul_repeat_active && timer_elapsed(_emul_repeat_timer) > _emul_delay) {
         _emul_send_key(_emul_last_keycode);
         _emul_repeat_timer = timer_read();

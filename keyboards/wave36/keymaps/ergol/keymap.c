@@ -35,7 +35,7 @@ enum layers {
 };
 
 enum custom_keycodes {
-  MA_TOBASE = ME_LAST_EMUL,
+  MA_TOBASE = ME_LAST_EMUL+1,
   MA_CMD_ALT_TAB,
   //FUNCTION LAYER
   ME_MICOFF,
@@ -53,30 +53,33 @@ typedef struct {
 
 void tap_dance_tap_hold_finished(tap_dance_state_t *state, void *user_data) {
   tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-  if (state->count == 1
+
+  if (state->pressed) {
+      if (state->count == 1
 #ifndef PERMISSIVE_HOLD
-      && !state->interrupted
+          && !state->interrupted
 #endif
-  ) {
-      register_code16(tap_hold->hold);
-      tap_hold->held = tap_hold->hold;
-  } else {
-      register_code16(tap_hold->tap);
-      tap_hold->held = tap_hold->tap;
+      ) {
+          register_code16(tap_hold->hold);
+          tap_hold->held = tap_hold->hold;
+      } else {
+          register_code16(tap_hold->tap);
+          tap_hold->held = tap_hold->tap;
+      }
   }
 }
 
 void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
-    tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
+  tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
 
-    if (tap_hold->held) {
-        unregister_code16(tap_hold->held);
-        tap_hold->held = 0;
-    }
+  if (tap_hold->held) {
+      unregister_code16(tap_hold->held);
+      tap_hold->held = 0;
+  }
 }
 
 #define ACTION_TAP_DANCE_TAP_HOLD(tap, hold) \
-    { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
+  { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 
 
 // Tap dance enums
@@ -289,11 +292,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (record->event.pressed) layer_on(_NUM);
       else layer_off(_NUM);
     }
-
   }
-
-  //AZERTY EMUL
-  process_record_user_emul(keycode, record);
 
   //KEYS
   switch (keycode) {
@@ -307,20 +306,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       break;
 
-    // OTHER KEYS
-    default:
-      //OTHER THAN AZERTY EMUL
+    //EMUL KEYS
+    case ME_FIRST_EMUL...ME_LAST_EMUL:
+      emul_process_record_user(keycode, record);
+      break;
+    
+    //OTHER KEYS
+    case MA_CMD_ALT_TAB:
+      if (record->event.pressed) { 
+        if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LGUI(SS_TAP(X_TAB))); else SEND_STRING(SS_LALT(SS_TAP(X_TAB)));
+      } break;  
+
+    // FUNCT
+    case ME_PSCR:
       if (record->event.pressed) {
-        switch (keycode) {
-          case MA_CMD_ALT_TAB: if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LGUI(SS_TAP(X_TAB)));      else SEND_STRING(SS_LALT(SS_TAP(X_TAB)));   break;
-        // FUNCT
-          case ME_PSCR:   if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LSFT(SS_LCMD(SS_TAP(X_4))));  else SEND_STRING(SS_TAP(X_PSCR));           break;
-          case ME_MICOFF: if (emul_get_os() == EMUL_OS_OSX)   SEND_STRING(SS_LCMD(SS_TAP(X_F4)));          else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));    break;
-          case SOL_TGGL:  solenoid_enable(!solenoid_enabled); break;
-          case SOL_INC:   solenoid_ring_time_inc(); break;
-          case SOL_DEC:   solenoid_ring_time_dec(); break;
-      }
-    }
+        if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LSFT(SS_LCMD(SS_TAP(X_4)))); else SEND_STRING(SS_TAP(X_PSCR));
+      } break;
+
+    case ME_MICOFF: 
+      if (record->event.pressed) {
+        if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LCMD(SS_TAP(X_F4))); else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));
+      } break;
+
+    case SOL_TGGL: if (record->event.pressed) solenoid_enable(!solenoid_enabled); break;
+    case SOL_INC:  if (record->event.pressed) solenoid_ring_time_inc(); break;
+    case SOL_DEC:  if (record->event.pressed) solenoid_ring_time_dec(); break;
   }
   return true;
 }
@@ -379,6 +389,6 @@ void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO C
       trackpoint_lock_dir = TP_FREE;
     }
   }
-  matrix_scan_user_emul();
+  emul_matrix_scan_user();
 }
 
