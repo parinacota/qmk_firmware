@@ -196,6 +196,7 @@ enum custom_keycodes_emul {
 #define ALTGR(A) {register_code(KC_RALT); A ; unregister_code(KC_RALT);}
 #define OPTION(A) {register_code(KC_LOPT); A ; unregister_code(KC_LOPT);}
 #define COMMAND(A) {register_code(KC_LGUI); A ; unregister_code(KC_LGUI);}
+#define UNSHIFT(A) {unregister_code(KC_LSFT); A ; register_code(KC_LSFT);}
 #define XKEY(A) {SEND_STRING(SS_TAP(A));}
 #define XCIRC(A) {SEND_STRING(SS_TAP(X_LBRC) SS_TAP(A));}
 #define XCIRCSHIFT(A) {SEND_STRING(SS_TAP(X_LBRC) SS_LSFT(SS_TAP(A)));}
@@ -215,7 +216,7 @@ void _emul_send_key(uint16_t keycode) {
         case ME_INSEC:if (_emul_os_mode == EMUL_OS_OSX)      UNMOD(OPTION(XKEY(X_SPC))) else UNMOD(WINALT3(2,5,5)); break; // ALT 255 = insec
         case ME_SCLN: UNMOD(XKEY(X_COMM)); break; 
         case ME_COLN: UNMOD(XKEY(X_DOT)); break;
-        case ME_DEL:  UNMOD(XKEY(X_DEL)); break;
+        case ME_DEL:  UNSHIFT(XKEY(X_DEL)); break;
         // emul DEAD LAYER
         case ME_ACIR:   if (_emul_os_mode == EMUL_OS_OSX) XCIRC(X_Q)                else WINALT3(1,3,1); break;// ALT 131 = â
         case ME_OE:     if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_O))         else WINALT4(0,1,5,6); break;//ALT 0156 = œ

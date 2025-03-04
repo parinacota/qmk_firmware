@@ -23,16 +23,7 @@ static tp_lock_dirs_t trackpoint_lock_dir;
 bool solenoid_enabled = true;
 int solenoid_ring_time = SOLENOID_RING_DEFAULT_TIME;
 
-enum layers {
-    _BAS,
-    _SHF,
-    _1DK,
-    _SDK,
-    _COD,
-    _NUM,
-    _FCT,
-    _MSE
-};
+enum layers { _BAS, _SHF, _1DK, _SDK, _COD, _NUM, _FCT, _MSE };
 
 enum custom_keycodes {
   MA_TOBASE = ME_LAST_EMUL+1,
@@ -71,7 +62,6 @@ void tap_dance_tap_hold_finished(tap_dance_state_t *state, void *user_data) {
 
 void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
   tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)user_data;
-
   if (tap_hold->held) {
       unregister_code16(tap_hold->held);
       tap_hold->held = 0;
@@ -81,12 +71,10 @@ void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
 #define ACTION_TAP_DANCE_TAP_HOLD(tap, hold) \
   { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 
-
 // Tap dance enums
 enum {
     TD1_CTL_GUI,
     TD2_BSPC_MS3,
-    TD3_SLSH_LALT,
 };
 
 // Tap Dance definitions
@@ -94,7 +82,6 @@ tap_dance_action_t tap_dance_actions[] = {
     // Tap once for Escape, twice for Caps Lock
     [TD1_CTL_GUI] = EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(KC_LCTL, KC_LGUI),
     [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
-    [TD3_SLSH_LALT] = ACTION_TAP_DANCE_TAP_HOLD(S(KC_DOT), KC_LALT),
 };
 
 void keyboard_pre_init_user(void) {
@@ -298,7 +285,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
     //TAP DANCE section
     case TD(TD2_BSPC_MS3):
-    case TD(TD3_SLSH_LALT):
       action = &tap_dance_actions[QK_TAP_DANCE_GET_INDEX(keycode)];
       if (!record->event.pressed && action->state.count && !action->state.finished) {
         tap_dance_tap_hold_t *tap_hold = (tap_dance_tap_hold_t *)action->user_data;
