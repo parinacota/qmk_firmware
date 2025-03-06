@@ -22,9 +22,7 @@
 #define TAPPING_TOGGLE 1
 #define TAPPING_TERM 200
 
-//#define LED_PIN_ON_STATE 0
-
-// TEST
+// HAPTIC
 #define I2C_DRIVER I2CD0
 #define I2C1_SDA_PIN GP16
 #define I2C1_SCL_PIN GP17
@@ -48,14 +46,14 @@
 #define PS2_MOUSE_ROTATE 270
 #define MOUSE_LAYER_TIMEOUT 1000
 
-//RGB LEDs
+// RGB LEDS
+//#define WS2812_PIO_USE_PIO1
 //#define WS2812_DI_PIN GP10
 //#define WS2812_LED_COUNT 3
-//#define WS2812_BYTE_ORDER WS2812_BYTE_ORDER_RGB
-//#define RGBLIGHT_LAYERS
-
-//#define WS2812_BYTE_ORDER WS2812_BYTE_ORDER_RGB
-
+//#define WS2812_TIMING 1200
+//#define WS2812_T1H 700 // Width of a 1 bit in ns
+//#define WS2812_T0H 300 // Width of a 0 bit in ns
+//#define WS2812_TRST_US 200
 
 
 

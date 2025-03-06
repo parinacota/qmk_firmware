@@ -29,8 +29,9 @@
         "enabled": true,
         "mouse_enabled": true
     },
+    "layout": "LAYOUT_split_3x5_3",
     "layouts": {
-        "LAYOUT_36keys": {
+        "LAYOUT_split_3x5_3": {
             "layout": [
                 {"matrix": [0, 0], "x": 0, "y": 0},
                 {"matrix": [0, 1], "x": 1, "y": 0},

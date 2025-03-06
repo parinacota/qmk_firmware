@@ -38,7 +38,3 @@
 #define WS2812_TRST_US 200
 
 
-
-
-
-

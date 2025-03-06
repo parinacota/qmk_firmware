@@ -9,8 +9,8 @@
         "extrakey": true,
         "mousekey": true,
         "nkro": true,
-        "rgblight": true,
-        "ps2": true
+        "ps2": true,
+        "rgblight": true
     },
     "matrix_pins": {
         "cols": ["GP4", "GP5", "GP6", "GP7", "GP8",   "GP18", "GP19", "GP20", "GP21", "GP23"],
@@ -23,24 +23,21 @@
         "pid": "0x0000",
         "vid": "0xFEED"
     },
-    "ws2812": {
-        "driver": "vendor",
-        "pin": "GP10"
-    },
-    "rgblight": {
-        "led_count": 3,
-        "driver": "ws2812",
-        "max_brightness": 96,
-        "default": {"on": true, "hue": 0},
-        "layers": {"enabled": true}
-
-    },
     "ps2": {
         "clock_pin": "GP13",
         "data_pin": "GP12",
         "driver": "vendor",
         "enabled": true,
         "mouse_enabled": true
+    },
+    "rgblight": {
+        "led_count": 3,
+        "driver": "ws2812",
+        "max_brightness": 96
+    },
+    "ws2812": {
+        "pin": "GP10",
+        "driver": "vendor"
     },
     "layouts": {
         "LAYOUT_36keys": {
