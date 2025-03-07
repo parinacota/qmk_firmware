@@ -7,10 +7,6 @@
 #include <emul_azerty.h>
 #include "drv2605l.h"
 
-//#define LED_INTERNAL  GP17
-static uint16_t trackpoint_timer;
-extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
-
 typedef enum tp_lock_dirs {
   TP_FREE,
   TP_LOCK_H,
@@ -26,11 +22,14 @@ enum custom_keycodes {
   //FUNCTION LAYER
   ME_MICOFF,
   ME_PSCR,
-  SOL_TGGL,
-  SOL_INC,
-  SOL_DEC,
+  LED_UP,
+  LED_DOWN,
+  HAPT_INC,
+  HAPT_DEC,
+  HAPT_TGGL
 };
 
+// ########### TAP DANCE #############
 typedef struct {
     uint16_t tap;
     uint16_t hold;
@@ -75,11 +74,70 @@ tap_dance_action_t tap_dance_actions[] = {
   [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
 };
 
-void keyboard_pre_init_user(void) {
-  //led RGB
-  rgblight_sethsv_range(HSV_WHITE, 0,3);
+// ################ HAPTIC #################
+bool haptic_module_enabled = true;
+uint16_t haptic_module_pattern = DRV2605L_EFFECT_SHARP_TICK_1_100;
 
-  //RESET PS2 - PS2RESETPIN = PIN RESET PS2
+void haptic_module_pulse_default(void) {
+  if (haptic_module_enabled) drv2605l_pulse(haptic_module_pattern);
+}
+
+void haptic_module_small_tick(void) {
+  if (haptic_module_enabled) drv2605l_pulse(DRV2605L_EFFECT_SHARP_TICK_3_60);
+}
+
+uint32_t haptic_module_pulse_default_callback(uint32_t trigger_time, void *cb_arg) {
+  haptic_module_pulse_default();
+  return 0; 
+}
+
+void haptic_module_pulse_defer(uint16_t delay) {
+  if (haptic_module_enabled) defer_exec(delay, haptic_module_pulse_default_callback, NULL);
+}
+
+void haptic_module_toggle(void) {
+  haptic_module_enabled = !haptic_module_enabled;
+  if (haptic_module_enabled) {
+    haptic_module_pattern = DRV2605L_EFFECT_SHARP_TICK_1_100;
+    haptic_module_pulse_default();
+  }
+}
+
+void haptic_module_increase(void) {
+  if (haptic_module_enabled) { 
+    haptic_module_pattern = (haptic_module_pattern < DRV2605L_EFFECT_SMOOTH_HUM_5_10) ? haptic_module_pattern + 1 : DRV2605L_EFFECT_SMOOTH_HUM_5_10;
+    haptic_module_pulse_default();
+  }
+}
+
+void haptic_module_decrease(void) {
+  if (haptic_module_enabled) {
+    haptic_module_pattern = (haptic_module_pattern > DRV2605L_EFFECT_STRONG_CLICK_100) ? haptic_module_pattern - 1 : DRV2605L_EFFECT_STRONG_CLICK_100;
+    haptic_module_pulse_default();
+  }
+} 
+
+// ################ LEDS #################
+uint32_t turn_off_led(uint32_t trigger_time, void *cb_arg) {
+  rgblight_sethsv_range(HSV_OFF, 0, 3);
+  return 0;
+}
+
+void emul_notify_os_change(emul_os_types os) {
+  if (os == EMUL_OS_OSX) {
+    rgblight_sethsv_range(HSV_BLUE, 0, 3);
+  } else {
+    rgblight_sethsv_range(HSV_WHITE, 0, 3);
+  }
+  defer_exec(1000, turn_off_led, NULL);
+}
+
+// ############## TRACKPOINT #############
+static uint16_t tick_effect_timer = 0;
+static uint16_t trackpoint_timer;
+extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
+
+void reset_ps2_trackpoint(void) {
   gpio_set_pin_output(PS2RESETPIN);
   gpio_write_pin(PS2RESETPIN,true);
   wait_ms(2);
@@ -90,28 +148,20 @@ void layer_mouse_feedback(bool enabled) {
   if (enabled) {
     rgblight_sethsv_range(HSV_RED, 2,3);
   } else {
-    drv2605l_pulse(DRV2605L_EFFECT_SHARP_TICK_1_100);
-    //if (solenoid_enabled) solenoid_ring();
-    //if (layer_state_is(_1DK) || layer_state_is(_SDK))
-    //  rgblight_sethsv_range(HSV_PINK, 0,3);
-    //else
-    rgblight_sethsv_range(HSV_OFF, 2, 3); jkd
+    haptic_module_pulse_default();
+    rgblight_sethsv_range(HSV_OFF, 2, 3);
   }
 }
 
-uint32_t turn_off_led(uint32_t trigger_time, void *cb_arg) {
-    rgblight_sethsv_range(HSV_OFF, 0, 3);
-    return 0;
+// ######## QMK routines ########
+
+void keyboard_pre_init_user(void) {
+  //led RGB
+  rgblight_sethsv_range(HSV_WHITE, 0,3);
+
+  //RESET PS2 - PS2RESETPIN = PIN RESET PS2
+  reset_ps2_trackpoint();
 }
-
-uint8_t pulse_pattern=0;
-
-uint32_t next_pulse(uint32_t trigger_time, void *cb_arg) {
-    drv2605l_pulse(pulse_pattern++);
-    if (pulse_pattern>=DRV2605L_EFFECT_COUNT) pulse_pattern=0;
-    return 1000;
-}
-
 
 void keyboard_post_init_user(void) {
   emul_keyboard_post_init_user();
@@ -144,7 +194,7 @@ _______,      _______,      FR_COMM,      _______,      FR_B,                   
                                           _______,      _______,      _______,      ME_DEL,       ME_INSEC,     _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
- 
+
 
     [_1DK] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
@@ -196,11 +246,11 @@ A(KC_TAB),    FR_LPRN,      FR_RPRN,      ME_CIR,       ME_GRV,                 
 
     [_FCT] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-QK_REBOOT,    SOL_INC,      ME_REPEAT_TOGGLE,  KC_BRIU, KC_VOLU,                                  KC_F1,        KC_F2,        KC_F3,        KC_F4,        KC_F5,   
+QK_REBOOT,    HAPT_INC,     LED_UP,       KC_BRIU,      KC_VOLU,                                  KC_F1,        KC_F2,        KC_F3,        KC_F4,        KC_F5,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-QK_BOOTLOADER,SOL_DEC,      XXXXXXX,      KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
+QK_BOOTLOADER,HAPT_DEC,     LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-XXXXXXX,      SOL_TGGL,     XXXXXXX,      XXXXXXX,      XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
+XXXXXXX,      HAPT_TGGL,    ME_REPEAT_TOGGLE,XXXXXXX,   XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      ME_MICOFF,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -234,7 +284,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
   // MOUSE btns
   if (keycode == MS_BTN1 || keycode == MS_BTN2) {
-    //if (record->event.pressed && solenoid_enabled) solenoid_ring();
+    if (record->event.pressed) haptic_module_pulse_default();
     trackpoint_timer = timer_read(); 
     //enable _NUM when MS_BTN1 is hold
     if (keycode == MS_BTN1) {
@@ -276,24 +326,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LCMD(SS_TAP(X_F4))); else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));
       } break;
 
-      /*
-    case SOL_TGGL: if (record->event.pressed) solenoid_enable(!solenoid_enabled); break;
-    case SOL_INC:  if (record->event.pressed) solenoid_ring_time_inc(); break;
-    case SOL_DEC:  if (record->event.pressed) solenoid_ring_time_dec(); break;
-    */
+    case HAPT_TGGL: if (record->event.pressed) haptic_module_toggle(); break;
+    case HAPT_INC:  if (record->event.pressed) haptic_module_increase(); break;
+    case HAPT_DEC:  if (record->event.pressed) haptic_module_decrease(); break;
+    case LED_UP:    if (record->event.pressed) rgblight_increase_val(); break;
+    case LED_DOWN:  if (record->event.pressed) rgblight_decrease_val(); break;
+
   }
   return true;
-}
-
-void set_led_colors(int h, int s, int v) {
-
 }
 
 // LED for some layers
 layer_state_t layer_state_set_user(layer_state_t state) {
   
     // LEFT LED
-    if (layer_state_cmp(state,_SHF) || layer_state_cmp(state,_SDK)) {
+    if (/*layer_state_cmp(state,_SHF) ||*/ layer_state_cmp(state,_SDK)) {
       rgblight_sethsv_range(HSV_BLUE, 1, 2);
     } else {
       rgblight_sethsv_range(HSV_OFF, 1, 2);
@@ -313,8 +360,11 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     }
 
     //LEFT LED = MOUSE
-    if (get_highest_layer(state) == _MSE)
-      layer_mouse_feedback(true);    
+    if (get_highest_layer(state) == _MSE) {
+      layer_mouse_feedback(true);
+      tick_effect_timer = timer_read();
+    } else
+      tick_effect_timer = 0;
 
     return state;
 }
@@ -355,6 +405,12 @@ void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO C
       trackpoint_lock_dir = TP_FREE;
     }
   }
+  /*if (layer_state_is(_MSE)) {
+    if (timer_elapsed(tick_effect_timer) > 100) {
+      haptic_module_small_tick();
+      tick_effect_timer = timer_read();
+    }
+  }*/
   emul_matrix_scan_user();
 }
 

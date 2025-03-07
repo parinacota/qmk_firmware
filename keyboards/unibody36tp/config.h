@@ -3,22 +3,6 @@
 
 #pragma once
 
-/*
- * Feature disable options
- *  These options are also useful to firmware size reduction.
- */
-
-/* disable debug print */
-//#define NO_DEBUG
-
-/* disable print */
-//#define NO_PRINT
-
-/* disable action features */
-//#define NO_ACTION_LAYER
-//#define NO_ACTION_TAPPING
-//#define NO_ACTION_ONESHOT
-
 #define TAPPING_TOGGLE 1
 #define TAPPING_TERM 200
 
@@ -45,6 +29,7 @@
 #define PS2RESETPIN GP14
 #define PS2_MOUSE_ROTATE 270
 #define MOUSE_LAYER_TIMEOUT 1000
+#define PS2_MOUSE_USE_2_1_SCALING
 
 // RGB LEDS
 //#define WS2812_PIO_USE_PIO1

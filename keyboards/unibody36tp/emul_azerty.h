@@ -61,8 +61,11 @@ bool emul_toggle_repeat(void) {
     return _emul_repeat_enabled;
 }
 
+extern void emul_notify_os_change(emul_os_types os);
+
 uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
     emul_set_os(detected_host_os());
+    emul_notify_os_change(_emul_os_mode);
     return 0;
 }
 
