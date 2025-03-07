@@ -78,7 +78,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
 ![](doc/polissage.jpeg)
 
 - Intégration du module PS2
-![](doc/intérieur2.jpeg)
+![](doc/interieur2.jpeg)
 
 - Clavier fini
 ![](doc/unibody36tp_1.jpeg)
