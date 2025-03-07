@@ -48,7 +48,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
     - Pas de possibilité d'installer ni de configurer des OS "de production", divers et variés (en général des Linux, qq Windows aussi), dont l'accès se fait par des déports d'écran
     - Simplicité du "plug-and-play", j'arrive sur n'importe quel PC ou Mac, et mon clavier est en Ergo-L, sans aucune autre action.
     - Bien entendu, il y a des limites à cette approche "d'émulation" (en dehors du code qui est hideux), mais pas eu le moindre soucis depuis que j'ai débuté l'Ergol il y a plusieurs mois.
-    - Je vais ajouter le support de Linux (iBus seulement) à titre expérimental, mais je n'ai pas besoin des caractères étendus de l'Ergo-L sur Linux, mon usage reste sur du shell d'administration :-)
+    - Dans mon petit header file "emul_azerty.h" je vais ajouter le support de Linux (iBus seulement) à titre expérimental, mais je n'ai pas besoin des caractères étendus de l'Ergo-L sur Linux, sur cet OS mon usage reste sur du shell d'administration :-)
     
 **Roman Photo**
 - PCB design et routage dans EasyEDA-Pro
