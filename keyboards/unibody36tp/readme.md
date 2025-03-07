@@ -66,6 +66,9 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
   
 - Coulage de l'epoxy par dessus (note: faire une étanchéité parfaite!!! l'epoxy se faufile partout.... vraiment partout)
 ![](doc/epoxy.jpg)
+
+- Inspection du chat (étape cruciale!)
+![](doc/chat.jpeg)
   
 - Usinage par dessus (surfaçage de l'ensemble, mais aussi forme des touches, chanfrein)
 ![](doc/usinage_surface.jpeg)
@@ -73,7 +76,10 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
   
 - Polissage (papier de verre à l'eau, puis polish) - l'epoxy redevient transparent!
 ![](doc/polissage.jpeg)
-  
+
+- Intégration du module PS2
+![](doc/intérieur2.jpeg)
+
 - Clavier fini
 ![](doc/unibody36tp_1.jpeg)
 ![](doc/unibody36tp_3.jpeg)
