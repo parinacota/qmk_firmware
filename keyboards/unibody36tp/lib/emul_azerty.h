@@ -40,6 +40,7 @@ typedef enum {
 } emul_os_types;
 
 emul_os_types _emul_os_mode = EMUL_OS_WIN;
+void emul_notify_os_change(emul_os_types os);
 
 void emul_set_os(os_variant_t os) {
     switch(os) {
