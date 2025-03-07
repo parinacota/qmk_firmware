@@ -26,11 +26,11 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
     - Connecteur USB-C dans l'épaisseur du PCB, pour pouvoir le cacher dans le boîtier.
     - PCB identique mais sans pistes, pour servir de fond (mais qui sera usiné à la CNC sur les 2 faces pour en pas perdre en épaisseur).
     - Fabrication chez JLCPCB, avec usage de leur service d'assemblage PCBA (malheureusement en "standard", plus cher, à cause du connecteur USB et des RVB en format 2020... il y a un prix au perfectionnisme...). Env 200€ pour 10 PCB (transport et TVA compris), ça pique un peu...
-<br/>
+  
 - **Boîtier usiné dans la masse** à la CNC, sur base d'un bloc de Solid Surface noir
     - 6.6mm d'épaisseur fini, les PCBs sont encastrés par dessous, et les touches rapportées par dessous avant soudure (changement possible en dessoudant les 2 pins et en changeant le switch par dessus, bien sûr loin de la praticité d'un hot-swap)
     - fenêtre pour l'électronique et les LEDs (sera remplie pendant la construction d'epoxy liquide)
-<br/>
+  
 - **touches KLP Lamé** (https://github.com/braindefender/KLP-Lame-Keycaps) avec qq adaptations faites en 3D avant impression:
     - Espacement MX avec connecteurs Choc
     - Intégration du trackpoint sur les 4 touches de l'index droit
