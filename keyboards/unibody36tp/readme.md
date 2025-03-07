@@ -53,27 +53,27 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
 **Roman Photo**
 - PCB design et routage dans EasyEDA-Pro
 ![](doc/EasyEDA.png)
-<br/>
+  
 - Modélisation dans Fusion 360
 ![](doc/Fusion_1.png)
-<br/>
+  
 - Préparation de l'usinage dans Fusion (calcul du gCode de la trajectoire des fraises)
 ![](doc/Fusion_2.png)
 ![](doc/Fusion_3.png)
-<br/>
+  
 - Usinage du boîtier par dessous (CNC FoxAlien pilotée par gSender)
 ![](doc/usinage_dessous.jpg)
-<br/>
+  
 - Coulage de l'epoxy par dessus (note: faire une étanchéité parfaite!!! l'epoxy se faufile partout.... vraiment partout)
 ![](doc/epoxy.jpg)
-<br/>
+  
 - Usinage par dessus (surfaçage de l'ensemble, mais aussi forme des touches, chanfrein)
 ![](doc/usinage_surface.jpeg)
 ![](doc/apres_usinage.jpeg)
-<br/>
+  
 - Polissage (papier de verre à l'eau, puis polish) - l'epoxy redevient transparent!
 ![](doc/polissage.jpeg)
-<br/>
+  
 - Clavier fini
 ![](doc/unibody36tp_1.jpeg)
 ![](doc/unibody36tp_3.jpeg)
