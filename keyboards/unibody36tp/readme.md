@@ -13,7 +13,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
         - Un peu plus compliqué au niveau PCB (mémoire, quartz) qu'un STM32, mais moins qu'un nRF!
     - Emplacement pour l'intégration d'un **Trackpoint** de récup Lenovo, au niveau de l'index droit (protocole PS2, géré dans QMK). J'adore la souris sous l'index, et le scroll génial et proportionnel...
     - Driver pour **retour haptique**
-        - Petit composant DRV2605l de TI +  un Linear actuator d'un tel portable (raccordé sur un bus I2C, driver existant dans QMK).
+        - Petit composant DRV2605l de TI et un Linear actuator d'un tel portable (raccordé sur un bus I2C, driver existant dans QMK).
         - Le seul use case (mais bien utile!) concerne le feedback sur la désactivation de la layer "boutons de souris" (le clic principal redevient l'espace au bout d'1 seconde... mieux vaut le savoir)
     - **3 LEDs RVB** type WS2812. Peu utile, je ne regarde pas le clavier, mais ça fait joli un peu de couleur. J'ai une led rouge par ex sur l'activation de la dead-key Ergo-L, indiquant que la prochaine touche sera altérée! Idem pour la souris et qq layers avec d'autres couleurs... c'est le côté bling-bling.
     - **Layout à 36 touches**
