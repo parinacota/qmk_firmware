@@ -1,6 +1,7 @@
 // Copyright 2023 QMK
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+
 #include QMK_KEYBOARD_H
 #include <lib/leds.h>
 #include <lib/haptic.h>
@@ -78,10 +79,11 @@ tap_dance_action_t tap_dance_actions[] = {
 
 // ################ Utily #################
 void emul_notify_os_change(emul_os_types os) {
-  if (os == EMUL_OS_OSX) {
-    leds_on_for_range(500, HS_BLUE, 0, LED_COUNT);
-  } else {
-    leds_on_for_range(500, HS_WHITE, 0, LED_COUNT);
+  switch(os) {
+    case EMUL_OS_OSX:   leds_on_for_range(500, HS_BLUE, 0, LED_COUNT); break;
+    case EMUL_OS_LINUX: leds_on_for_range(500, HS_GREEN, 0, LED_COUNT); break;
+    case EMUL_OS_WIN:   leds_on_for_range(500, HS_WHITE, 0, LED_COUNT); break;
+    default:            leds_on_for_range(500, HS_YELLOW, 0, LED_COUNT); break;
   }
 }
 
@@ -103,6 +105,14 @@ void keyboard_pre_init_user(void) {
 void keyboard_post_init_user(void) {
   leds_turn_off();
   emul_keyboard_post_init_user();
+}
+
+bool process_detected_host_os_kb(os_variant_t detected_os) {
+  if (!process_detected_host_os_user(detected_os)) {
+      return false;
+  }
+  emul_set_os(detected_os);
+  return true;
 }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -212,9 +222,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (trackpoint_timer && keycode!=MS_BTN1 && keycode!=MS_BTN2 && keycode!=MS_BTN3) { 
       layer_off(_MSE);
       layer_mouse_feedback(false);
-      unregister_code(MS_BTN1);
-      unregister_code(MS_BTN2);
-      unregister_code(MS_BTN3);
+      //unregister_code(MS_BTN1);
+      //unregister_code(MS_BTN2);
+      //unregister_code(MS_BTN3);
       trackpoint_timer = 0; //Reset the timer again until the mouse moves more
   }
 

@@ -1,4 +1,6 @@
 #pragma once
+#include "process_unicode.h"
+
 // Emulate special characters for AZERTY layout
 // Usage:
 // 0. add these options in rules.mk:
@@ -36,7 +38,8 @@ uint16_t _emul_last_keycode = 0;
 
 typedef enum {
     EMUL_OS_WIN,
-    EMUL_OS_OSX
+    EMUL_OS_OSX,
+    EMUL_OS_LINUX
 } emul_os_types;
 
 emul_os_types _emul_os_mode = EMUL_OS_WIN;
@@ -48,6 +51,10 @@ void emul_set_os(os_variant_t os) {
         case OS_IOS:
             _emul_os_mode = EMUL_OS_OSX;
             break;
+        case OS_LINUX:
+            set_unicode_input_mode(UNICODE_MODE_LINUX);
+            _emul_os_mode = EMUL_OS_LINUX;
+            break;  
         default:
             _emul_os_mode = EMUL_OS_WIN;
     }
@@ -210,61 +217,317 @@ enum custom_keycodes_emul {
 #define XGRVSHIFT(A) {SEND_STRING(SS_TAP(X_NUHS) SS_LSFT(SS_TAP(A)));}
 #define XTILD(A) {SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_TAP(A));}
 #define XTILDSHIFT(A) {SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_LSFT(SS_TAP(A)));}
+#define LIN_UTF(U) {unicode_input_start(); register_hex(U); unicode_input_finish();}
 
 void _emul_send_key(uint16_t keycode) {
     switch (keycode) {
         //ERGO BASE LAYER
-        case ME_MINS: if (_emul_os_mode == EMUL_OS_OSX)      XKEY(X_EQL)                  else XKEY(X_6);               break;
+        case ME_MINS: 
+            switch (_emul_os_mode) { 
+                case EMUL_OS_OSX: XKEY(X_EQL); break;            //OSX: TAP = - on = key  
+                default: XKEY(X_6); break;                       //Win, Lin: TAP = - on 6 key
+            } break;
+
         //emul SHIFT LAYER
-        case ME_EXCL: if (_emul_os_mode == EMUL_OS_OSX)      UNMOD(XKEY(X_8))           else UNMOD(XKEY(X_SLSH));   break;
-        case ME_INSEC:if (_emul_os_mode == EMUL_OS_OSX)      UNMOD(OPTION(XKEY(X_SPC))) else UNMOD(WINALT3(2,5,5)); break; // ALT 255 = insec
-        case ME_SCLN: UNMOD(XKEY(X_COMM)); break; 
-        case ME_COLN: UNMOD(XKEY(X_DOT)); break;
-        case ME_DEL:  UNSHIFT(XKEY(X_DEL)); break;
+        case ME_EXCL:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: UNMOD(XKEY(X_8)); break;      //OSX: TAP = ! on 8 key
+                default: UNMOD(XKEY(X_SLSH)); break;            //Win, Lin: TAP = ! on / key
+            } break;
+
+        case ME_INSEC:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: UNMOD(OPTION(XKEY(X_SPC))); break; //OSX: TAP = insecable space on CMD+space key
+                case EMUL_OS_LINUX: LIN_UTF(0x00A0); break;          //Lin: UTF-00A0 = insecable space
+                case EMUL_OS_WIN: UNMOD(WINALT3(2,5,5)); break;      //Win: ALT 255 = insec
+            } break;
+
+        case ME_SCLN: 
+            UNMOD(XKEY(X_COMM)); 
+            break; 
+
+        case ME_COLN:
+            UNMOD(XKEY(X_DOT)); 
+            break;
+
+        case ME_DEL:
+            UNSHIFT(XKEY(X_DEL)); 
+            break;
+
         // emul DEAD LAYER
-        case ME_ACIR:   if (_emul_os_mode == EMUL_OS_OSX) XCIRC(X_Q)                else WINALT3(1,3,1); break;// ALT 131 = â
-        case ME_OE:     if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_O))         else WINALT4(0,1,5,6); break;//ALT 0156 = œ
-        case ME_OCIR:   if (_emul_os_mode == EMUL_OS_OSX) XCIRC(X_O)                else WINALT3(1,4,7); break;// ALT 147 = ô
-        case ME_UCIR:   if (_emul_os_mode == EMUL_OS_OSX) XCIRC(X_U)                else WINALT3(1,5,0); break;// ALT 150 = û
-        case ME_ECIR:   if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_E))         else WINALT3(1,3,6); break;// ALT 136 = ê
-        case ME_ICIR:   if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_I))         else WINALT3(1,4,0); break;// ALT 140 = î
-        case ME_ITRE:   if (_emul_os_mode == EMUL_OS_OSX) XTRE(X_I)                 else WINALT3(1,3,9); break;// ALT 139 = ï
-        case ME_AE:     if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_Q))         else WINALT3(1,4,5); break;// ALT 145 = æ
-        case ME_ETC:    if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_COMM))      else WINALT4(0,1,3,3); break; // ...
-        case ME_QUOTFR: if (_emul_os_mode == EMUL_OS_OSX) SHIFT(OPTION(XKEY(X_4)))  else WINALT4(0,1,4,6); break;//ALT 0146 = ’
-        case ME_CADR:   if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_EQL))       else WINALT4(0,1,5,1); break;// ALT 151 = 
-        case ME_SCADR:  if (_emul_os_mode == EMUL_OS_OSX) SHIFT(OPTION(XKEY(X_EQL)))else WINALT4(0,1,5,0); break;// ALT 0150 = 
-        case ME_QCADR:  if (_emul_os_mode == EMUL_OS_OSX) XKEY(X_EQL)               else WINALT4(0,1,7,3); break;// ALT 0173 = - (insec)
-        case ME_UNDS:   if (_emul_os_mode == EMUL_OS_OSX)  SHIFT(XKEY(X_EQL))       else XKEY(X_8); break; // _
-        case ME_LQUOTFR: if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_7))        else WINALT3(1,7,4); break;// ALT 174 = «
-        case ME_RQUOTFR: if (_emul_os_mode == EMUL_OS_OSX) SHIFT(OPTION(XKEY(X_7))) else WINALT3(1,7,5); break;// ALT 175 = »
-        case ME_NTILD:  if (_emul_os_mode == EMUL_OS_OSX) XTILD(X_N)                else WINALT3(1,6,4); break;// ALT 164 = ñ
-        case ME_MICR:   if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_SCLN))      else SHIFT(XKEY(X_NUHS)); break;// ALT 181 = µ
-        case ME_SUP2:   if (_emul_os_mode == EMUL_OS_WIN)                               XKEY(X_GRV); break;// ALT 178 = ²
-        case ME_SECT:   if (_emul_os_mode == EMUL_OS_OSX)  XKEY(X_6)                else SHIFT(XKEY(X_SLSH)); break;// ALT 167 = §
-        case ME_COPYR:  if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_C))        else WINALT4(0,1,6,9); break;// ALT 0169 = ©
-        case ME_https:  SEND_STRING("https" SS_TAP(X_DOT) SS_LSFT(SS_TAP(X_DOT)) SS_LSFT(SS_TAP(X_DOT))); break; // https://
+        case ME_ACIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,3,1); break;     //Win: ALT 131 = â
+                default: XCIRC(X_Q); break;                  //OSX, Lin: TAP = â with dead ^ + Q key
+            } break;
+
+        case ME_OE:     
+            switch (_emul_os_mode) { 
+                case EMUL_OS_OSX: OPTION(XKEY(X_O)); break;      //OSX: OPTION+O = œ   
+                case EMUL_OS_LINUX: LIN_UTF(0x0153); break;      //Lin: UTF-0153 = œ
+                case EMUL_OS_WIN: WINALT4(0,1,5,6); break;       //Win: ALT+0156 = œ
+            } break;
+        
+        case ME_OCIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,4,7); break;        //Win: ALT 147 = ô
+                default: XCIRC(X_O); break;                     //OSX: TAP = ô with dead ^ + O key
+            } break;
+
+        case ME_UCIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,5,0); break;       //Win: ALT 150 = û
+                default: XCIRC(X_U); break;                    //Lin, OSX: TAP = û with dead ^ + U key
+            } break;
+
+        case ME_ECIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,3,6); break;       //Win: ALT 136 = ê
+                case EMUL_OS_OSX: OPTION(XKEY(X_E)) break;     //OSX: OPTION+E = ê
+                default: XCIRC(X_E); break;                    //Lin, TAP = ê with dead ^ + E key
+            } break;
+
+        case ME_ICIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,4,0); break;       //Win: ALT 140 = î
+                case EMUL_OS_OSX: OPTION(XKEY(X_I)) break;     //OSX: OPTION+I = î
+                default: XCIRC(X_I); break;                    //Lin: dead ^ + I
+            } break;
+
+        case ME_ITRE:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,3,9); break;       //Win: ALT 139 = ï
+                default: XTRE(X_U); break;                    //Lin, OSX: TAP = ï with dead ¨ + I key
+            } break;
+
+        case ME_AE:
+            switch (_emul_os_mode) { 
+                case EMUL_OS_OSX: OPTION(XKEY(X_Q)) break;       //OSX: OPTION+A = œ   
+                case EMUL_OS_LINUX: LIN_UTF(0x00E6); break;      //Lin: UTF-00E6 = æ
+                case EMUL_OS_WIN: WINALT3(1,4,5); break;         //Win: ALT+145 = æ
+            } break;
+
+        case ME_ETC:
+            switch (_emul_os_mode) { 
+                case EMUL_OS_OSX: OPTION(XKEY(X_COMM)) break;   //OSX: OPTION+; = ...
+                case EMUL_OS_LINUX: LIN_UTF(0x2026); break;     //Lin: UTF-2026 = ...
+                case EMUL_OS_WIN: WINALT4(0,1,3,3); break;       //Win: ALT+0133 = ...
+            } break;
+
+        case ME_QUOTFR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,4,6); break;      //Win: ALT 0146 = ’
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_4))); break; //OSX: SHIFT+OPTION+4 = ’
+                case EMUL_OS_LINUX: LIN_UTF(0x2019); break;     //Lin: UTF-2019 = ’
+            } break;
+
+        case ME_CADR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,5,1); break;       //Win: ALT 0151 = -
+                case EMUL_OS_LINUX: LIN_UTF(0x2014); break;      //Lin: UTF-2012 = –
+                case EMUL_OS_OSX: OPTION(XKEY(X_EQL)); break;    //OSX: Shift+Option+- = –
+            } break;
+
+        case ME_SCADR: 
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,5,0); break;       //Win: ALT 0150 = -
+                case EMUL_OS_LINUX: LIN_UTF(0x2013); break;      //Lin: UTF-2013 = —
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_EQL))); break; //OSX: Shift+Option+- = —
+            } break;
+
+        case ME_QCADR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,7,3); break;       //Win: ALT 0173 = - (insec)
+                case EMUL_OS_LINUX: LIN_UTF(0x00AD); break;      //Lin: UTF-00AD = - (insec)
+                case EMUL_OS_OSX: XKEY(X_EQL); break;            //OSX: TAP = - (non insec)
+            } break;
+
+        case ME_UNDS:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: SHIFT(XKEY(X_EQL)); break;   //OSX: SHIFT+TAP = _ (on EQL key)
+                default: XKEY(X_8); break;                     //Win, Lin: TAP = _ (on 8 key)
+            } break;
+
+        case ME_LQUOTFR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,7,4); break;       //Win: ALT 174 = «
+                case EMUL_OS_LINUX: LIN_UTF(0x00AB); break;    //Lin: UTF-00AB = «
+                case EMUL_OS_OSX: OPTION(XKEY(X_7)); break;    //OSX: opt+7 = «
+            } break;
+
+        case ME_RQUOTFR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,7,5); break;       //Win: ALT 175 = »
+                case EMUL_OS_LINUX: LIN_UTF(0x00BB); break;    //Lin: UTF-00BB = »
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_7))); break; //OSX: SHIFT+opt+7 = »
+            } break;
+
+        case ME_NTILD:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,6,4); break;       //Win: ALT 164 = ñ
+                case EMUL_OS_LINUX: LIN_UTF(0x00F1); break;    //Lin: UTF-00F1 = ñ
+                case EMUL_OS_OSX: XTILD(X_N); break;           //OSX: TAP = ñ with dead ~ + N key
+            } break;
+
+        case ME_MICR: 
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: OPTION(XKEY(X_SCLN)); break; //OSX: OPTION+; = µ
+                default: SHIFT(XKEY(X_NUHS)); break;           //other: key µ
+            } break;
+
+        case ME_SUP2:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: /* ??? */ break;            //OSX: Not implemeted
+                default: XKEY(X_GRV); break;                  //Win, Lin: TAP ²
+            } break;
+
+        case ME_SECT:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: XKEY(X_6); break;            //OSX: TAP = § on 6 key
+                default: SHIFT(XKEY(X_SLSH)); break;           //Win, Lin: TAP = § on / key
+            } break;
+
+        case ME_COPYR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,6,9); break;      //Win: ALT 0169 = ©
+                case EMUL_OS_LINUX: LIN_UTF(0x00A9); break;     //Lin: UTF-00A9 = ©
+                case EMUL_OS_OSX: OPTION(XKEY(X_C)); break;     //OSX: TAP = © with OPTION+C key
+            } break;
+
+        case ME_https: 
+            SEND_STRING("https" SS_TAP(X_DOT) SS_LSFT(SS_TAP(X_DOT)) SS_LSFT(SS_TAP(X_DOT)));
+            break; // https://
+
         //emul DEAD MAJ LAYER
-        case ME_ACIRM: if (_emul_os_mode == EMUL_OS_OSX)   XCIRCSHIFT(X_Q)          else WINALT3(1,8,2); break;// ALT 182 = Â
-        case ME_CCEDM: if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_9))        else WINALT3(1,2,8); break;// ALT 128 = Ç
-        case ME_OEM: if (_emul_os_mode == EMUL_OS_OSX)     SHIFT(OPTION(XKEY(X_O))) else WINALT4(0,1,4,0); break;// ALT 0140 = Œ
-        case ME_OCIRM: if (_emul_os_mode == EMUL_OS_OSX)   SHIFT(OPTION(XKEY(X_LBRC))) else WINALT3(2,2,6); break;// ALT 226 = Ô
-        case ME_UCIRM: if (_emul_os_mode == EMUL_OS_OSX)   SHIFT(OPTION(XKEY(X_8))) else WINALT3(2,3,4); break;// ALT 234 = Û
-        case ME_AGRVM: if (_emul_os_mode == EMUL_OS_OSX)   SEND_STRING(SS_TAP(X_CAPS) SS_TAP(X_0) SS_TAP(X_CAPS)); else WINALT3(1,8,3); break;//ALT 183 = À
-        case ME_EACUM: if (_emul_os_mode == EMUL_OS_OSX)   XACUTSHIFT(X_E)          else WINALT3(1,4,4); break;//ALT 144 = É
-        case ME_EGRVM: if (_emul_os_mode == EMUL_OS_OSX)   XGRVSHIFT(X_E)           else WINALT3(2,1,2); break;//ALT 212 = È
-        case ME_ECIRM: if (_emul_os_mode == EMUL_OS_OSX)   SHIFT(OPTION(XKEY(X_E))) else WINALT3(2,1,0); break;// ALT 210 = Ê
-        case ME_ICIRM: if (_emul_os_mode == EMUL_OS_OSX)   SHIFT(OPTION(XKEY(X_H))) else WINALT3(2,1,5); break;// ALT 215 = Î
-        case ME_ITREM: if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_J))        else WINALT3(2,1,6); break;// ALT 216 = Ï
-        case ME_UGRVM: if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_QUOT))     else WINALT3(2,3,5); break;// ALT 235 = Ù
-        case ME_AEM:   if (_emul_os_mode == EMUL_OS_OSX)   SHIFT(OPTION(XKEY(X_Q))) else WINALT3(1,4,6); break;// ALT 146 = Æ
-        case ME_SUP3:  if (_emul_os_mode == EMUL_OS_WIN)                                WINALT3(2,5,2); break;// ALT 252 = ³
-        case ME_NTILDM: if (_emul_os_mode == EMUL_OS_OSX)  XTILDSHIFT(X_N)          else WINALT3(1,6,5); break;// ALT 165 = Ñ
-        case ME_RGSTRD: if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_R))        else WINALT4(0,1,7,4); break; // ALT 0174 = ®
-        case ME_BULLET: if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_NUBS))     else WINALT1(7); break;// ALT 7 = •
+        case ME_ACIRM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,8,2); break;                //Win: ALT 182 = Â
+                default: XCIRCSHIFT(X_Q); break;                        //Lin, OSX: TAP = Â with dead ^ + Q key
+            } break;
+
+        case ME_CCEDM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,2,8); break;                //Win: ALT 128 = Ç
+                case EMUL_OS_OSX: OPTION(XKEY(X_9)); break;             //OSX: TAP = Ç with OPTION+9 key
+                case EMUL_OS_LINUX: LIN_UTF(0x00C7); break;             //Lin: UTF-00C7 = Ç
+            } break;
+
+        case ME_OEM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,4,0); break;              //Win: ALT 0140 = Œ
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_O))); break;      //OSX: SHIFT+OPTION+O = Œ
+                case EMUL_OS_LINUX: LIN_UTF(0x0152); break;             //Lin: UTF-0152 = Œ
+            } break;
+
+        case ME_OCIRM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,2,6); break;                //Win: ALT 226 = Ô
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_LBRC))); break;   //OSX: SHIFT+OPTION+[ = Ô
+                default: XCIRCSHIFT(X_O); break;                        //Lin: TAP = Ô with dead ^ + O key
+            } break;
+
+        case ME_UCIRM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,3,4); break;                //Win: ALT 234 = Û
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_8))); break;      //OSX: SHIFT+OPTION+8 = Û
+                default: XCIRCSHIFT(X_U); break;                        //Lin: TAP = Û with dead ^ + U key
+            } break;
+
+        case ME_AGRVM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,8,3); break;//ALT 183 = À
+                case EMUL_OS_OSX: SEND_STRING(SS_TAP(X_CAPS) SS_TAP(X_0) SS_TAP(X_CAPS)); break;
+                case EMUL_OS_LINUX: LIN_UTF(0x00C0); break;//UTF-00C0 = À
+            } break;
+
+        case ME_EACUM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,4,4); break;                //Win: ALT 144 = É
+                case EMUL_OS_OSX: XACUTSHIFT(X_E); break;               //OSX: TAP = É with dead ´ + E key
+                case EMUL_OS_LINUX: LIN_UTF(0x00C9); break;             //Lin: UTF-00C9 = É
+            } break;
+
+        case ME_EGRVM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,1,2); break;                //Win: ALT 212 = È
+                case EMUL_OS_OSX: XGRVSHIFT(X_E); break;                //OSX: TAP = È with dead ` + E key
+                case EMUL_OS_LINUX: LIN_UTF(0x00C8); break;             //Lin: UTF-00C8 = È
+            } break;
+
+        case ME_ECIRM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,1,0); break;                //Win: ALT 210 = Ê
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_E))); break;      //OSX: SHIFT+OPTION+E = Ê
+                case EMUL_OS_LINUX: XCIRCSHIFT(X_E); break;             //Lin: TAP = Ê with dead ^ + E key
+            } break;
+
+        case ME_ICIRM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,1,5); break;                //Win: ALT 215 = Î
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_H))); break;      //OSX: SHIFT+OPTION+H = Î
+                case EMUL_OS_LINUX: XCIRCSHIFT(X_I); break;             //Lin: UTF-00CE = Î
+            } break;
+
+        case ME_ITREM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,1,6); break;                //Win: ALT 216 = Ï
+                case EMUL_OS_OSX: OPTION(XKEY(X_J)); break;             //OSX: OPTION+J = Ï
+                case EMUL_OS_LINUX: LIN_UTF(0x00CF); break;             //Lin: UTF-00CF = Ï
+            } break;
+
+        case ME_UGRVM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(2,3,5); break;                //Win: ALT 235 = Ù
+                case EMUL_OS_OSX: OPTION(XKEY(X_QUOT)); break;          //OSX: OPTION+' = Ù
+                case EMUL_OS_LINUX: LIN_UTF(0x00D9); break;             //Lin: UTF-00D9 = Ù
+            } break;
+
+        case ME_AEM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,4,6); break;                //Win: ALT 146 = Æ
+                case EMUL_OS_OSX: SHIFT(OPTION(XKEY(X_Q))); break;      //OSX: SHIFT+OPTION+Q = Æ
+                case EMUL_OS_LINUX: LIN_UTF(0x00C6); break;             //Lin: UTF-00C6 = Æ
+            } break;
+
+        case ME_SUP3:
+            switch(_emul_os_mode) {
+                case EMUL_OS_OSX: /* ??? */ break;            //OSX: Not implemeted
+                case EMUL_OS_LINUX: LIN_UTF(0x00B3); break;   //Lin: UTF-00B3 = ³
+                case EMUL_OS_WIN: WINALT3(2,5,2); break;       //Win: ALT 252 = ³
+            } break;
+
+        case ME_NTILDM:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,6,5); break;                //Win: ALT 165 = Ñ
+                case EMUL_OS_OSX: XTILDSHIFT(X_N); break;               //OSX: TAP = Ñ with dead ~ + N key
+                case EMUL_OS_LINUX: LIN_UTF(0x00D1); break;             //Lin: UTF-00D1 = Ñ
+            } break;
+
+        case ME_RGSTRD:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT4(0,1,7,4); break;                //Win: ALT 174 = ®
+                case EMUL_OS_OSX: OPTION(XKEY(X_R)); break;               //OSX: OPTION+R = ®
+                case EMUL_OS_LINUX: LIN_UTF(0x00AE); break;               //Lin: UTF-00AE = ®
+            } break;
+
+        case ME_BULLET:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT1(7); break;                //Win: ALT 7 = •
+                case EMUL_OS_OSX: OPTION(XKEY(X_NUBS)); break;      //OSX: OPTION+8 = •
+                case EMUL_OS_LINUX: LIN_UTF(0x2022); break;         //Lin: UTF-2022 = •
+            } break;
+
         //emul CODE LAYER
-        case ME_EURO: if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_RBRC))      else ALTGR(XKEY(X_E));        break;
-        case ME_LCBR:  if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_5))         else ALTGR(XKEY(X_4)); break; // {
+        case ME_EURO:
+            if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_RBRC))
+            else ALTGR(XKEY(X_E));
+            break;
+
+        case ME_LCBR:
+            if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_5))
+            else ALTGR(XKEY(X_4));
+            break; // {
+
         case ME_RCBR:  if (_emul_os_mode == EMUL_OS_OSX)  OPTION(XKEY(X_MINS))      else ALTGR(XKEY(X_EQL)); break; // {
         case ME_LBRC:  if (_emul_os_mode == EMUL_OS_OSX)  SHIFT(OPTION(XKEY(X_5)))  else ALTGR(XKEY(X_5)); break; // [
         case ME_RBRC:  if (_emul_os_mode == EMUL_OS_OSX)  SHIFT(OPTION(XKEY(X_MINS))) else ALTGR(XKEY(X_MINS)); break; // ]
@@ -281,11 +544,29 @@ void _emul_send_key(uint16_t keycode) {
         // emul NUM
         case ME_BSLH: if (_emul_os_mode == EMUL_OS_OSX)      SHIFT(OPTION(XKEY(X_DOT)))    else ALTGR(XKEY(X_8)); break;
         case ME_AT:   if (_emul_os_mode == EMUL_OS_OSX)      XKEY(X_NUBS)                 else ALTGR(XKEY(X_0));        break;
-        case ME_GRV:    if (_emul_os_mode == EMUL_OS_OSX) XGRV(X_SPC)               else WINALT2(9,6); break; // ALT 96 = ``
-        case ME_CIR:   if (_emul_os_mode == EMUL_OS_OSX)  XCIRC(X_SPC)              else WINALT2(9,4); break; // ALT 94 = ^
+
+        case ME_GRV:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT2(9,6); break;                //Win: ALT 96 = ``
+                case EMUL_OS_LINUX: LIN_UTF(0x0060); break;           //Lin: UTF-0060 = `
+                case EMUL_OS_OSX: XGRV(X_SPC); break;                 //OSX: TAP = ` on space key
+            } break;
+
+        case ME_CIR:
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT2(9,4); break;  // ALT 94 = ^
+                default: XCIRC(X_SPC); break;           // OSX, Lin: TAP = ^ on space key
+            } break;
+                
         case ME_TIL:   if (_emul_os_mode == EMUL_OS_OSX)  XTILD(X_SPC)              else WINALT3(1,2,6); break; // ALT 126 = ~
+            switch(_emul_os_mode) {
+                case EMUL_OS_WIN: WINALT3(1,2,6); break;        // Win: ALT 126 = ~
+                case EMUL_OS_LINUX: LIN_UTF(0x007E); break;     // Lin: UTF-007E = ~
+                case EMUL_OS_OSX: XTILD(X_SPC); break;          // OSX: TAP = ~ on space key
+            } break;
+
         /* case MA_EOL: WINALT2(2,0); break; // ALT 20 = ¶  */
-    } // switch
+    } // end of main switch
 }
 
 bool emul_process_record_user(uint16_t keycode, keyrecord_t *record) {
