@@ -36,18 +36,6 @@
 #define MOUSE_LAYER_TIMEOUT 1000
 #define PS2_MOUSE_USE_2_1_SCALING
 
-//Unicode
-//#define UNICODE_SELECTED_MODES UNICODE_MODE_LINUX
-
-// RGB LEDS
-//#define WS2812_PIO_USE_PIO1
-//#define WS2812_DI_PIN GP10
-//#define WS2812_LED_COUNT 3
-//#define WS2812_TIMING 1200
-//#define WS2812_T1H 700 // Width of a 1 bit in ns
-//#define WS2812_T0H 300 // Width of a 0 bit in ns
-//#define WS2812_TRST_US 200
-
 
 
 

@@ -9,6 +9,8 @@
 // 0. add these options in rules.mk:
 //      OS_DETECTION_ENABLE = yes
 //      DEFERRED_EXEC_ENABLE = yes
+//      UNICODE_ENABLE = yes
+//      SRC += lib/emul_azerty.c
 // 1. Add <emul_azerty.h> to your keymap.c
 // 2. Add the following code to your config.h
 //      call emul_keyboard_post_init_user() in your keyboard_post_init_user() --> will detect the host OS -- 
@@ -21,9 +23,11 @@
 //      }
 // 4. Use the AZ_xxxx keycodes in your keymaps
 // 5. optionnaly:
-//      call emul_set_os() to force a specific OS (EMUL_OS_WIN, EMUL_OS_OSX, EMUL_OS_LINUX)
-//      call emul_get_os() to get the current OS (EMUL_OS_WIN or EMUL_OS_OSX)
-//      use the keycodes AZ_REPEAT_TOGGLE, AZ_REPEAT_DEC, AZ_REPEAT_INC to control key repeat
+//      - call emul_set_os() to force a specific OS (EMUL_OS_WIN, EMUL_OS_OSX, EMUL_OS_LINUX)
+//      - call emul_get_os() to get the current OS (EMUL_OS_WIN or EMUL_OS_OSX)
+//      - use the keycodes AZ_REPEAT_TOGGLE, AZ_REPEAT_DEC, AZ_REPEAT_INC to control key repeat
+//      - use the keycodes AZ_NEXT_EMUL to switch between OS
+//      - implement the emul_notify_event_callback(emul_event_t ev) to get the OS change events or other events (like repeat on/off)
 // 6. Enjoy
 
 #define _EMUL_INITIAL_REPEAT_DELAY 300 

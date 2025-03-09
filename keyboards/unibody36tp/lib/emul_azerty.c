@@ -75,6 +75,10 @@ bool emul_toggle_repeat(void) {
     return _emul_repeat_enabled;
 }
 
+/// @brief Callback to get the host OS
+/// @param trigger_time Not used
+/// @param cb_arg Not used
+/// @return 0 (no repeatintion of the defered execution)
 uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
     os_variant_t os = detected_host_os();
     switch(os) {
