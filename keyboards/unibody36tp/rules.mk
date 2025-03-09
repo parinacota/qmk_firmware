@@ -14,6 +14,9 @@ KEYBOARD_SHARED_EP = yes
 #for linux support
 UNICODE_COMMON = yes
 
+SRC += lib/trackpoint.c lib/leds.c lib/haptic.c lib/emul_azerty.c
+
+
 
 
 

@@ -1,14 +1,15 @@
 // Copyright 2023 QMK
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-
 #include QMK_KEYBOARD_H
 #include <lib/leds.h>
 #include <lib/haptic.h>
 #include <lib/trackpoint.h>
-#include <keymap_french.h>
+
 #include <lib/emul_azerty.h>
 
+static uint16_t trackpoint_timer;
+extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
 typedef enum tp_lock_dirs {
   TP_FREE,
   TP_LOCK_H,
@@ -19,17 +20,18 @@ static tp_lock_dirs_t trackpoint_lock_dir;
 enum layers { _BAS, _SHF, _1DK, _SDK, _COD, _NUM, _FCT, _MSE };
 
 enum custom_keycodes {
-  MA_TOBASE = ME_LAST_EMUL+1,
+  MA_TOBASE = NEW_SAFE_RANGE,
   MA_CMD_ALT_TAB,
   //FUNCTION LAYER
-  ME_MICOFF,
-  ME_PSCR,
+  KB_MICOFF,
+  KB_PSCR,
   LED_UP,
   LED_DOWN,
   HAPT_INC,
   HAPT_DEC,
   HAPT_TGGL,
-  LED_FR
+  LED_FR,
+  AZ_LINUX
 };
 
 // ########### TAP DANCE #############
@@ -78,11 +80,13 @@ tap_dance_action_t tap_dance_actions[] = {
 };
 
 // ################ Utily #################
-void emul_notify_os_change(emul_os_types os) {
-  switch(os) {
-    case EMUL_OS_OSX:   leds_on_for_range(500, HS_BLUE, 0, LED_COUNT); break;
-    case EMUL_OS_LINUX: leds_on_for_range(500, HS_GREEN, 0, LED_COUNT); break;
-    case EMUL_OS_WIN:   leds_on_for_range(500, HS_WHITE, 0, LED_COUNT); break;
+void emul_notify_event_callback(emul_event_t ev) {
+  switch(ev) {
+    case EMUL_EVENT_OS_OSX:   leds_on_for_range(500, HS_WHITE, 0, LED_COUNT); break;
+    case EMUL_EVENT_OS_LINUX: leds_on_for_range(500, HS_RED, 0, LED_COUNT); break;
+    case EMUL_EVENT_OS_WIN:   leds_on_for_at(500,HS_RED,LED_LEFT);leds_on_for_at(500,HS_GREEN,LED_RIGHT);leds_on_for_at(500,HS_BLUE,LED_BOTTOM); break;
+    case EMUL_EVENT_REPEAT_ON: leds_on_for_range(500, HS_GREEN, LED_LEFT, LED_LEFT+1); break;
+    case EMUL_EVENT_REPEAT_OFF: leds_on_for_range(500, HS_RED, LED_LEFT, LED_LEFT+1); break;
     default:            leds_on_for_range(500, HS_YELLOW, 0, LED_COUNT); break;
   }
 }
@@ -107,23 +111,15 @@ void keyboard_post_init_user(void) {
   emul_keyboard_post_init_user();
 }
 
-bool process_detected_host_os_kb(os_variant_t detected_os) {
-  if (!process_detected_host_os_user(detected_os)) {
-      return false;
-  }
-  emul_set_os(detected_os);
-  return true;
-}
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_BAS] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-FR_Q,         FR_C,         FR_O,         FR_P,         FR_W,                                     FR_J,         FR_M,         FR_D,         OSL(_1DK),    FR_Y,   
+AZ_Q,         AZ_C,         AZ_O,         AZ_P,         AZ_W,                                     AZ_J,         AZ_M,         AZ_D,         OSL(_1DK),    AZ_Y,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-FR_A,         FR_S,         FR_E,         FR_N,         FR_F,                                     FR_L,         FR_R,         FR_T,         FR_I,         FR_U,
+AZ_A,         AZ_S,         AZ_E,         AZ_N,         AZ_F,                                     AZ_L,         AZ_R,         AZ_T,         AZ_I,         AZ_U,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-LALT_T(FR_Z), FR_X ,        ME_MINS,      FR_V,         LT(_FCT,FR_B),                            FR_DOT,       FR_H,         FR_G,         FR_COMM,      LALT_T(FR_K),
+LALT_T(AZ_Z), AZ_X ,        AZ_MINS,      AZ_V,         LT(_FCT,AZ_B),                            AZ_DOT,       AZ_H,         AZ_G,         AZ_COMM,      LALT_T(AZ_K),
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                         TD(TD1_CTL_GUI),LM(_SHF, MOD_LSFT),MO(_COD),TD(TD2_BSPC_MS3),LT(_NUM,KC_SPC),KC_ENT        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -131,36 +127,36 @@ LALT_T(FR_Z), FR_X ,        ME_MINS,      FR_V,         LT(_FCT,FR_B),          
 
     [_SHF] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-_______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      ME_EXCL,      _______,   
+_______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      AZ_EXCL,      _______,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 _______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      _______,      _______,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-_______,      _______,      FR_COMM,      _______,      FR_B,                                     ME_COLN,      _______,      _______,      ME_SCLN,      FR_K,
+_______,      _______,      AZ_COMM,      _______,      AZ_B,                                     AZ_COLN,      _______,      _______,      AZ_SCLN,      AZ_K,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          _______,      _______,      _______,      ME_DEL,       ME_INSEC,     _______        
+                                          _______,      _______,      _______,      AZ_DEL,       AZ_INSEC,     _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
 
     [_1DK] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-ME_ACIR,      FR_CCED,      ME_OE,        ME_OCIR,      FR_DEG,                                   ME_SECT,      ME_MICR,      ME_UNDS,      FR_DIAE,      ME_UCIR,   
+AZ_ACIR,      AZ_CCED,      AZ_OE,        AZ_OCIR,      AZ_DEG,                                   AZ_SECT,      AZ_MICR,      AZ_UNDS,      AZ_DIAE,      AZ_UCIR,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-FR_AGRV,      FR_EACU,      FR_EGRV,      ME_ECIR,      ME_NTILD,                                 ME_LQUOTFR,   ME_RQUOTFR,   ME_ICIR,      ME_ITRE,      FR_UGRV,
+AZ_AGRV,      AZ_EACU,      AZ_EGRV,      AZ_ECIR,      AZ_NTILD,                                 AZ_LQUOTFR,   AZ_RQUOTFR,   AZ_ICIR,      AZ_ITRE,      AZ_UGRV,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-ME_AE,        ME_SUP2,      ME_QCADR,     ME_SCADR,     ME_CADR,                                  ME_ETC,       ME_https,     XXXXXXX,      XXXXXXX,      ME_COPYR,
+AZ_AE,        AZ_SUP2,      AZ_QCADR,     AZ_SCADR,     AZ_CADR,                                  AZ_ETC,       AZ_https,     XXXXXXX,      XXXXXXX,      AZ_COPYR,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          _______,      OSL(_SDK),    XXXXXXX,      XXXXXXX,      ME_QUOTFR,    XXXXXXX        
+                                          _______,      OSL(_SDK),    XXXXXXX,      XXXXXXX,      AZ_QUOTFR,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
     [_SDK] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-ME_ACIRM,     ME_CCEDM,     ME_OEM,       ME_OCIRM,     ME_BULLET,                                XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      ME_UCIRM,   
+AZ_ACIRM,     AZ_CCEDM,     AZ_OEM,       AZ_OCIRM,     AZ_BULLET,                                XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      AZ_UCIRM,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-ME_AGRVM,     ME_EACUM,     ME_EGRVM,     ME_ECIRM,     ME_NTILDM,                                XXXXXXX,      XXXXXXX,      ME_ICIRM,     ME_ITREM,     ME_UGRVM,
+AZ_AGRVM,     AZ_EACUM,     AZ_EGRVM,     AZ_ECIRM,     AZ_NTILDM,                                XXXXXXX,      XXXXXXX,      AZ_ICIRM,     AZ_ITREM,     AZ_UGRVM,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-ME_AEM,       ME_SUP3,      XXXXXXX,      XXXXXXX,      XXXXXXX,                                  XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      ME_RGSTRD,
+AZ_AEM,       AZ_SUP3,      XXXXXXX,      XXXXXXX,      XXXXXXX,                                  XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      AZ_RGSTRD,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           _______,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -168,11 +164,11 @@ ME_AEM,       ME_SUP3,      XXXXXXX,      XXXXXXX,      XXXXXXX,                
 
     [_COD] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-FR_DQUO,      ME_LABK,      ME_RABK,      FR_AMPR,      FR_PERC,                                  FR_DLR,       ME_EURO,      ME_SML1,      ME_SML2,      ME_SML3,   
+AZ_DQUO,      AZ_LABK,      AZ_RABK,      AZ_AMPR,      AZ_PERC,                                  AZ_DLR,       AZ_EURO,      AZ_SML1,      AZ_SML2,      AZ_SML3,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-ME_LCBR,      FR_LPRN,      FR_RPRN,      ME_RCBR,      ME_PIPE,                                  KC_LEFT,      KC_DOWN,      KC_UP,        KC_RGHT,      XXXXXXX,
+AZ_LCBR,      AZ_LPRN,      AZ_RPRN,      AZ_RCBR,      AZ_PIPE,                                  KC_LEFT,      KC_DOWN,      KC_UP,        KC_RGHT,      XXXXXXX,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-FR_QUOT,      ME_LBRC,      ME_RBRC,      ME_UNDS,      ME_HASH,                                  KC_HOME,      KC_PGDN,      KC_PGUP,      KC_END,       XXXXXXX,
+AZ_QUOT,      AZ_LBRC,      AZ_RBRC,      AZ_UNDS,      AZ_HASH,                                  KC_HOME,      KC_PGDN,      KC_PGUP,      KC_END,       XXXXXXX,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           _______,      XXXXXXX,      XXXXXXX,      _______,      KC_LSFT,      _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -180,11 +176,11 @@ FR_QUOT,      ME_LBRC,      ME_RBRC,      ME_UNDS,      ME_HASH,                
 
     [_NUM] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-KC_TAB,       ME_AT,        KC_SPC,       ME_TIL,       KC_ESC,                                   XXXXXXX,      FR_DOT,       FR_COMM,      XXXXXXX,      ME_BSLH,   
+KC_TAB,       AZ_AT,        KC_SPC,       AZ_TIL,       KC_ESC,                                   XXXXXXX,      AZ_DOT,       AZ_COMM,      XXXXXXX,      AZ_BSLH,   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-FR_1,         FR_2,         FR_3,         FR_4,         FR_5,                                     FR_6,         FR_7,         FR_8,         FR_9,         FR_0,
+AZ_1,         AZ_2,         AZ_3,         AZ_4,         AZ_5,                                     AZ_6,         AZ_7,         AZ_8,         AZ_9,         AZ_0,
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-A(KC_TAB),    FR_LPRN,      FR_RPRN,      ME_CIR,       ME_GRV,                                   ME_EQL,       ME_PLUS,      ME_MINS,      ME_ASTR,      FR_SLSH,
+A(KC_TAB),    AZ_LPRN,      AZ_RPRN,      AZ_CIR,       AZ_GRV,                                   AZ_EQL,       AZ_PLUS,      AZ_MINS,      AZ_ASTR,      AZ_SLSH,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           _______,      KC_LSFT,      _______,      _______,      _______,      _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -196,9 +192,9 @@ QK_REBOOT,    HAPT_INC,     LED_UP,       KC_BRIU,      KC_VOLU,                
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 QK_BOOTLOADER,HAPT_DEC,     LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
-XXXXXXX,      HAPT_TGGL,    ME_REPEAT_TOGGLE,LED_FR,   XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
+AZ_NEXT_EMUL, HAPT_TGGL,    AZ_REPEAT_TOGGLE,LED_FR,   XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      ME_MICOFF,    XXXXXXX        
+                                          XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      KB_MICOFF,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -251,7 +247,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       break;
 
     //EMUL KEYS
-    case ME_FIRST_EMUL...ME_LAST_EMUL:
+    case AZ_FIRST_EMUL...AZ_LAST_EMUL:
       emul_process_record_user(keycode, record);
       break;
     
@@ -262,12 +258,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       } break;  
 
     // FUNCT
-    case ME_PSCR:
+    case KB_PSCR:
       if (record->event.pressed) {
         if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LSFT(SS_LCMD(SS_TAP(X_4)))); else SEND_STRING(SS_TAP(X_PSCR));
       } break;
 
-    case ME_MICOFF: 
+    case KB_MICOFF: 
       if (record->event.pressed) {
         if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LCMD(SS_TAP(X_F4))); else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));
       } break;
@@ -279,11 +275,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case LED_UP:    if (record->event.pressed) leds_val_inc(); break;
     case LED_DOWN:  if (record->event.pressed) leds_val_dec(); break;
     
-    case LED_FR:    if (record->event.pressed) {
-      leds_gyro_start();
-    } else {
-      leds_gyro_stop();
-    } break;
+    case LED_FR:    if (record->event.pressed) leds_gyro_start(); else leds_gyro_stop(); break;
 
     case QK_BOOTLOADER: if (record->event.pressed) { leds_seths_range(HS_ORANGE,0,LED_COUNT); } break;
   }
