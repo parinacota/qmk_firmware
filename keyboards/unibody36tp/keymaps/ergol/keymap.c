@@ -146,7 +146,7 @@ AZ_AGRV,      AZ_EACU,      AZ_EGRV,      AZ_ECIR,      AZ_NTILD,               
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 AZ_AE,        AZ_SUP2,      AZ_QCADR,     AZ_SCADR,     AZ_CADR,                                  AZ_ETC,       AZ_https,     XXXXXXX,      XXXXXXX,      AZ_COPYR,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          _______,      OSL(_SDK),    XXXXXXX,      XXXXXXX,      AZ_QUOTFR,    XXXXXXX        
+                                          _______,      OSL(_SDK),    TO(_BAS),      TO(_BAS),    AZ_QUOTFR,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -158,7 +158,7 @@ AZ_AGRVM,     AZ_EACUM,     AZ_EGRVM,     AZ_ECIRM,     AZ_NTILDM,              
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 AZ_AEM,       AZ_SUP3,      XXXXXXX,      XXXXXXX,      XXXXXXX,                                  XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      AZ_RGSTRD,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          _______,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX,      XXXXXXX        
+                                          _______,      XXXXXXX,      TO(_BAS),     TO(_BAS),     XXXXXXX,      XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -182,7 +182,7 @@ AZ_1,         AZ_2,         AZ_3,         AZ_4,         AZ_5,                   
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+ 
 A(KC_TAB),    AZ_LPRN,      AZ_RPRN,      AZ_CIR,       AZ_GRV,                                   AZ_EQL,       AZ_PLUS,      AZ_MINS,      AZ_ASTR,      AZ_SLSH,
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
-                                          _______,      KC_LSFT,      _______,      _______,      _______,      _______        
+                                          _______,      KC_LSFT,      MO(_COD),     _______,      _______,      _______        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
     ),
 
@@ -274,7 +274,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     
     case LED_UP:    if (record->event.pressed) leds_val_inc(); break;
     case LED_DOWN:  if (record->event.pressed) leds_val_dec(); break;
-    
+     
     case LED_FR:    if (record->event.pressed) leds_gyro_start(); else leds_gyro_stop(); break;
 
     case QK_BOOTLOADER: if (record->event.pressed) { leds_seths_range(HS_ORANGE,0,LED_COUNT); } break;
@@ -294,7 +294,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
     //BOTTOM LED
     if (layer_state_cmp(state,_1DK) || layer_state_cmp(state,_SDK)) {
-      leds_seths_at(HS_RED, LED_BOTTOM);
+      leds_seths_at(8,192, LED_BOTTOM);
     } else if (layer_state_cmp(state,_COD)) {
       leds_seths_at(HS_GREEN, LED_BOTTOM);
     } else if (layer_state_cmp(state,_NUM)) {

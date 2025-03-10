@@ -1,9 +1,6 @@
 #ifndef EMUL_AZERTY_H
 #define EMUL_AZERTY_H
 
-#include QMK_KEYBOARD_H 
-#include <keymap_french.h>
-
 // Emulate special characters for AZERTY layout
 // Usage:
 // 0. add these options in rules.mk:
@@ -30,11 +27,15 @@
 //      - implement the emul_notify_event_callback(emul_event_t ev) to get the OS change events or other events (like repeat on/off)
 // 6. Enjoy
 
+#include QMK_KEYBOARD_H 
+#include <keymap_french.h>
+
 #define _EMUL_INITIAL_REPEAT_DELAY 300 
 #define _EMUL_REPEAT_DELAY 70
 #define _EMUL_REPEAT_DELAY_MIN 30
 #define _EMUL_REPEAT_DELAY_MAX 200
 
+//Normal keycodes for AZERTY layout
 #define AZ_Q FR_Q
 #define AZ_W FR_W
 #define AZ_E FR_E
@@ -89,8 +90,8 @@
 #define AZ_0 FR_0
 #define AZ_SLSH FR_SLSH                    
 
-enum custom_keycodes_emul {
-    /*emul BASE LAYER*/ 
+//emulated keycodes for AZERTY layout
+enum custom_keycodes_emul { 
     AZ_FIRST_EMUL = SAFE_RANGE, 
     AZ_EURO, 
     AZ_AT,  
@@ -176,12 +177,14 @@ enum custom_keycodes_emul {
     NEW_SAFE_RANGE
 };
 
+/// @brief emulated OS types
 typedef enum {
     EMUL_OS_WIN,
     EMUL_OS_LINUX,
     EMUL_OS_OSX,
 } emul_os_types;
 
+/// @brief events of the emulation layer (for the callback)
 typedef enum {
     EMUL_EVENT_OS_WIN,
     EMUL_EVENT_OS_OSX,
@@ -190,25 +193,71 @@ typedef enum {
     EMUL_EVENT_REPEAT_OFF
 } emul_event_t;
 
+/// @brief internal structure for the tap dance pair of keycodes
 typedef struct {
     uint16_t kc1;
     uint16_t kc2;
     uint16_t kc_held;
 } _emul_tap_dance_pair_invert_t;
 
+/// @brief Set the OS to emulate (OSX, Linux, Win)
+/// @param os The OS to emulate (EMUL_OS_WIN, EMUL_OS_LINUX, EMUL_OS_OSX)
 void emul_set_os(emul_os_types os);
+
+/// @brief Switch to the next emualted OS
+/// @param none 
 void emul_set_next_emul(void);
+
+/// @brief Return the current emulated OS
+/// @param none
+/// @return The current emulated OS (EMUL_OS_WIN, EMUL_OS_LINUX, EMUL_OS_OSX)
 emul_os_types emul_get_os(void);
+
+/// @brief Toggle the key repeatition
+/// @param none
+/// @return The new state of the key repeatition (true = on, false = off)
 bool emul_toggle_repeat(void);
+
+/// @brief Callback to get the host OS through USB discovery (QMK OS detection)
+/// @param trigger_time 
+/// @param cb_arg (not used)
+/// @return 0 (never repeat)
 uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg);
+
+/// @brief internal function to invert keycodes according of the OS (as CTRL / COMMAND on OSX)
+/// @param state 
+/// @param user_data 
 void _emul_tap_dance_pair_invert_on_each_tap(tap_dance_state_t *state, void *user_data);
+
+/// @brief internal function to invert keycodes according of the OS (as CTRL / COMMAND on OSX)
+/// @param state 
+/// @param user_data 
 void _emul_tap_dance_pair_invert_finished(tap_dance_state_t *state, void *user_data);
+
+/// @brief internal function to invert keycodes according of the OS (as CTRL / COMMAND on OSX)
+/// @param state 
+/// @param user_data 
 void _emul_tap_dance_pair_invert_reset(tap_dance_state_t *state, void *user_data);
+
+/// @brief Initialize the emul layer (call OS detection)
+/// @param  none
 void emul_keyboard_post_init_user(void);
+
+/// @brief internal function to send a keycode to the host, emulating the azerty layout
+/// @param keycode AMK keycode to send (range AZ_xxx)
 void _emul_send_key(uint16_t keycode);
+
+/// @brief Function to be called in the process_record_user() to emulate the azerty layout
+/// @param keycode trasmit the keycode to the emul layer
+/// @param record transmit the record to the emul layer
+/// @return true
 bool emul_process_record_user(uint16_t keycode, keyrecord_t *record);
+
+/// @brief Function to be called in the matrix_scan_user() to emulate the azerty layout (to implement the repeatition of the keycodes)
+/// @param  none
 void emul_matrix_scan_user(void);
 
+/// TAP DANCE for a pair of keycodes, inverting the keycodes according the OS (as CTRL / COMMAND on OSX)
 #define EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(kc1, kc2) \
     { .fn = {_emul_tap_dance_pair_invert_on_each_tap, _emul_tap_dance_pair_invert_finished, _emul_tap_dance_pair_invert_reset, NULL}, .user_data = (void *)&((_emul_tap_dance_pair_invert_t){kc1, kc2}), }
 

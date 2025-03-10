@@ -2,35 +2,9 @@
 #include "emul_azerty.h"
 #include "keymap_french.h"
 
-
-//#include "process_unicode.h"
-//#include "os_detection.h"
-//#include "deferred_exec.h"
-//#include "unicode.h"
-//#include "send_string_keycodes.h"
-//#include "process_tap_dance.h"
-
-// Emulate special characters for AZERTY layout
-// Usage:
-// 0. add these options in rules.mk:
-//      OS_DETECTION_ENABLE = yes
-//      DEFERRED_EXEC_ENABLE = yes
-// 1. Add <emul_azerty.h> to your keymap.c
-// 2. Add the following code to your config.h
-//      call emul_keyboard_post_init_user() in your keyboard_post_init_user() --> will detect the host OS -- 
-//      call process_record_user_emul(keycode, record) in your process_record_user() --> will emulate the keycodes
-//      call matrix_scan_user_emul() in your matrix_scan_user() --> needed for the repeatition of the keycodes (if used)
-// 3. define your custom keycodes in your keymap.c like this:
-//      enum custom_keycodes_emul {
-//         MY_FIRST_CUSTOM_KEYCODE = NEW_SAFE_RANGE, // NEW_SAFE_RANGE is the last keycode of the emul layer, that starts its counter with SAFE_RANGE
-//         ...
-//      }
-// 4. Use the AZ_xxxx keycodes in your keymaps
-// 5. optionnaly:
-//      call emul_set_os() to force a specific OS (EMUL_OS_WIN, EMUL_OS_OSX, EMUL_OS_LINUX)
-//      call emul_get_os() to get the current OS (EMUL_OS_WIN or EMUL_OS_OSX)
-//      use the keycodes AZ_REPEAT_TOGGLE, AZ_REPEAT_DEC, AZ_REPEAT_INC to control key repeat
-// 6. Enjoy
+// ****************************************************
+// See emul_azerty.h for the definition of the keycodes
+// ****************************************************
 
 uint16_t _emul_initial_repeat_delay = _EMUL_INITIAL_REPEAT_DELAY;
 uint16_t _emul_repeat_delay = _EMUL_REPEAT_DELAY;
@@ -42,20 +16,25 @@ uint16_t _emul_last_keycode = 0;
 
 emul_os_types _emul_os_mode = EMUL_OS_WIN;
 
+// Callback definition to notify the user of the OS change
+// This function should be implemented in the keymap
 __attribute__((weak)) void emul_notify_event_callback(emul_event_t ev) {}
 
 void emul_set_os(emul_os_types os) {
     switch(os) {
         case EMUL_OS_OSX:
             _emul_os_mode = EMUL_OS_OSX;
+            _emul_repeat_enabled = false;
             emul_notify_event_callback(EMUL_EVENT_OS_OSX);
             break;
         case EMUL_OS_LINUX:
             _emul_os_mode = EMUL_OS_LINUX;
+            _emul_repeat_enabled = true;
             emul_notify_event_callback(EMUL_EVENT_OS_LINUX);
             break;
         default:
             _emul_os_mode = EMUL_OS_WIN;
+            _emul_repeat_enabled = true;
             emul_notify_event_callback(EMUL_EVENT_OS_WIN);
     }
 }
@@ -75,10 +54,6 @@ bool emul_toggle_repeat(void) {
     return _emul_repeat_enabled;
 }
 
-/// @brief Callback to get the host OS
-/// @param trigger_time Not used
-/// @param cb_arg Not used
-/// @return 0 (no repeatintion of the defered execution)
 uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
     os_variant_t os = detected_host_os();
     switch(os) {
@@ -120,25 +95,113 @@ void emul_keyboard_post_init_user(void) {
     defer_exec(500, _emul_get_host_os, NULL);
 }
 
-#define UNMOD(A) {uint8_t _emul_mod_state = get_mods(); clear_mods(); A; set_mods(_emul_mod_state);}
-#define WINALT1(A) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A)));}
-#define WINALT2(A, B) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B)));}
-#define WINALT3(A, B, C) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B) SS_TAP(X_KP_ ## C)));}
-#define WINALT4(A, B, C, D) {SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B) SS_TAP(X_KP_ ## C) SS_TAP(X_KP_ ## D)));}
-#define SHIFT(A) {register_code(KC_LSFT); A ; unregister_code(KC_LSFT);}
-#define ALTGR(A) {register_code(KC_RALT); A ; unregister_code(KC_RALT);}
-#define OPTION(A) {register_code(KC_LOPT); A ; unregister_code(KC_LOPT);}
-#define COMMAND(A) {register_code(KC_LGUI); A ; unregister_code(KC_LGUI);}
-#define UNSHIFT(A) {unregister_code(KC_LSFT); A ; register_code(KC_LSFT);}
-#define XKEY(A) {SEND_STRING(SS_TAP(A));}
-#define XCIRC(A) {SEND_STRING(SS_TAP(X_LBRC) SS_TAP(A));}
-#define XCIRCSHIFT(A) {SEND_STRING(SS_TAP(X_LBRC) SS_LSFT(SS_TAP(A)));}
-#define XACUTSHIFT(A) {SEND_STRING(SS_LSFT(SS_LALT(SS_TAP(X_1))) SS_LSFT(SS_TAP(A)));}
-#define XTRE(A) {SEND_STRING(SS_LSFT(SS_TAP(X_LBRC)) SS_TAP(A));}
-#define XGRV(A) {SEND_STRING(SS_TAP(X_NUHS) SS_TAP(A));}
-#define XGRVSHIFT(A) {SEND_STRING(SS_TAP(X_NUHS) SS_LSFT(SS_TAP(A)));}
-#define XTILD(A) {SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_TAP(A));}
-#define XTILDSHIFT(A) {SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_LSFT(SS_TAP(A)));}
+#define UNMOD(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods();\
+    A;\
+    set_mods(_emul_mod_state);}
+
+#define WINALT1(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A)));\
+    set_mods(_emul_mod_state);}
+
+#define WINALT2(A, B) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B)));\
+    set_mods(_emul_mod_state);}
+
+#define WINALT3(A, B, C) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B) SS_TAP(X_KP_ ## C)));\
+    set_mods(_emul_mod_state);}
+
+#define WINALT4(A, B, C, D) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_KP_ ## A) SS_TAP(X_KP_ ## B) SS_TAP(X_KP_ ## C) SS_TAP(X_KP_ ## D)));\
+    set_mods(_emul_mod_state);}
+
+#define SHIFT(A) {\
+    register_code(KC_LSFT);\
+    A;\
+    unregister_code(KC_LSFT);}
+
+#define ALTGR(A) {\
+    register_code(KC_RALT);\
+    A;\
+    unregister_code(KC_RALT);}
+
+#define OPTION(A) {\
+    register_code(KC_LOPT);\
+    A;\
+    unregister_code(KC_LOPT);}
+
+#define COMMAND(A) {\
+    register_code(KC_LGUI);\
+    A;\
+    unregister_code(KC_LGUI);}
+
+#define UNSHIFT(A) {\
+    uint8_t _shifted = get_mods() & MOD_MASK_SHIFT;\
+    if (_shifted) unregister_code(KC_LSFT);\
+    A;\
+    if (_shifted) register_code(KC_LSFT);}
+
+#define XKEY(A) {\
+    SEND_STRING(SS_TAP(A));}
+
+#define XCIRC(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_TAP(X_LBRC) SS_TAP(A));\
+    set_mods(_emul_mod_state);}
+
+#define XCIRCSHIFT(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_TAP(X_LBRC) SS_LSFT(SS_TAP(A)));\
+    set_mods(_emul_mod_state);}
+
+#define XACUTSHIFT(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LSFT(SS_LALT(SS_TAP(X_1))) SS_LSFT(SS_TAP(A)));\
+    set_mods(_emul_mod_state);}
+
+#define XTRE(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LSFT(SS_TAP(X_LBRC)) SS_TAP(A));\
+    set_mods(_emul_mod_state);}
+
+#define XGRV(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_TAP(X_NUHS) SS_TAP(A));\
+    set_mods(_emul_mod_state);}
+
+#define XGRVSHIFT(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_TAP(X_NUHS) SS_LSFT(SS_TAP(A)));\
+    set_mods(_emul_mod_state);}
+
+#define XTILD(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_TAP(A));\
+    set_mods(_emul_mod_state);}
+
+#define XTILDSHIFT(A) {\
+    uint8_t _emul_mod_state = get_mods();\
+    clear_mods(); \
+    SEND_STRING(SS_LALT(SS_TAP(X_N)) SS_LSFT(SS_TAP(A)));\
+    set_mods(_emul_mod_state);}
+
 #define LIN_UTF(U) {unicode_input_start(); register_hex(U); unicode_input_finish();}
 
 void _emul_send_key(uint16_t keycode) {
@@ -147,29 +210,29 @@ void _emul_send_key(uint16_t keycode) {
         case AZ_MINS: 
             switch (_emul_os_mode) { 
                 case EMUL_OS_OSX: XKEY(X_EQL); break;            //OSX: TAP = - on = key  
-                default: XKEY(X_6); break;                       //Win, Lin: TAP = - on 6 key
+                default: UNSHIFT(XKEY(X_6)); break;                       //Win, Lin: TAP = - on 6 key
             } break;
 
         //emul SHIFT LAYER
         case AZ_EXCL:
             switch(_emul_os_mode) {
-                case EMUL_OS_OSX: UNMOD(XKEY(X_8)); break;      //OSX: TAP = ! on 8 key
-                default: UNMOD(XKEY(X_SLSH)); break;            //Win, Lin: TAP = ! on / key
+                case EMUL_OS_OSX: UNSHIFT(XKEY(X_8)); break;      //OSX: TAP = ! on 8 key
+                default: UNSHIFT(XKEY(X_SLSH)); break;            //Win, Lin: TAP = ! on / key
             } break;
 
         case AZ_INSEC:
             switch(_emul_os_mode) {
-                case EMUL_OS_OSX: UNMOD(OPTION(XKEY(X_SPC))); break; //OSX: TAP = insecable space on CMD+space key
+                case EMUL_OS_OSX: UNSHIFT(OPTION(XKEY(X_SPC))); break; //OSX: TAP = insecable space on CMD+space key
                 case EMUL_OS_LINUX: LIN_UTF(0x00A0); break;          //Lin: UTF-00A0 = insecable space
-                case EMUL_OS_WIN: UNMOD(WINALT3(2,5,5)); break;      //Win: ALT 255 = insec
+                case EMUL_OS_WIN: WINALT3(2,5,5); break;      //Win: ALT 255 = insec
             } break;
 
         case AZ_SCLN: 
-            UNMOD(XKEY(X_COMM)); 
+            UNSHIFT(XKEY(X_COMM)); 
             break; 
 
         case AZ_COLN:
-            UNMOD(XKEY(X_DOT)); 
+            UNSHIFT(XKEY(X_DOT)); 
             break;
 
         case AZ_DEL:
@@ -317,7 +380,7 @@ void _emul_send_key(uint16_t keycode) {
             } break;
 
         case AZ_https: 
-            SEND_STRING("https" SS_TAP(X_DOT) SS_LSFT(SS_TAP(X_DOT)) SS_LSFT(SS_TAP(X_DOT)));
+            UNMOD(SEND_STRING("https" SS_TAP(X_DOT) SS_LSFT(SS_TAP(X_DOT)) SS_LSFT(SS_TAP(X_DOT))));
             break; // https://
 
         //emul DEAD MAJ LAYER
@@ -441,7 +504,7 @@ void _emul_send_key(uint16_t keycode) {
 
         //emul CODE LAYER
         case AZ_EURO:
-            if (_emul_os_mode == EMUL_OS_OSX)   OPTION(XKEY(X_RBRC))
+            if (_emul_os_mode == EMUL_OS_OSX) OPTION(XKEY(X_RBRC))
             else ALTGR(XKEY(X_E));
             break;
 
