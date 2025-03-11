@@ -91,14 +91,16 @@ void emul_notify_event_callback(emul_event_t ev) {
   }
 }
 
+/*
 void layer_mouse_feedback(bool enabled) {
   if (enabled) {
     leds_seths_at(HS_RED, LED_RIGHT);
   } else {
     haptic_module_pulse_default();
-    leds_off_at(LED_RIGHT);
+    // LEDS turned off by layer callback
   }
 }
+*/
 
 // ######## QMK routines ########
 void keyboard_pre_init_user(void) {
@@ -109,6 +111,11 @@ void keyboard_pre_init_user(void) {
 void keyboard_post_init_user(void) {
   leds_turn_off();
   emul_keyboard_post_init_user();
+}
+
+bool process_detected_host_os_kb(os_variant_t detected_os) {
+  leds_on_for_at(500,HS_WHITE,LED_RIGHT);
+  return true;
 }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -188,11 +195,11 @@ A(KC_TAB),    AZ_LPRN,      AZ_RPRN,      AZ_CIR,       AZ_GRV,                 
 
     [_FCT] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-QK_REBOOT,    HAPT_INC,     LED_UP,       KC_BRIU,      KC_VOLU,                                  KC_F1,        KC_F2,        KC_F3,        KC_F4,        KC_F5,   
+QK_REBOOT,    AZ_DETECT_OS, LED_UP,       KC_BRIU,      KC_VOLU,                                  KC_F1,        KC_F2,        KC_F3,        KC_F4,        KC_F5,   
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
-QK_BOOTLOADER,HAPT_DEC,     LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
+QK_BOOTLOADER,AZ_NEXT_EMUL, LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
-AZ_NEXT_EMUL, HAPT_TGGL,    AZ_REPEAT_TOGGLE,LED_FR,   XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
+XXXXXXX,    AZ_REPEAT_TOGGLE,HAPT_TGGL,   LED_FR,       XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      KB_MICOFF,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -215,9 +222,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   tap_dance_action_t *action;
 
   //release MOUSE layer if any other key is pressed
-  if (trackpoint_timer && keycode!=MS_BTN1 && keycode!=MS_BTN2 && keycode!=MS_BTN3) { 
+  if (trackpoint_timer && keycode!=MS_BTN1 && keycode!=MS_BTN2 && keycode!=MS_BTN3 && record->event.pressed) { 
       layer_off(_MSE);
-      layer_mouse_feedback(false);
+      haptic_module_pulse_default();
       //unregister_code(MS_BTN1);
       //unregister_code(MS_BTN2);
       //unregister_code(MS_BTN3);
@@ -268,7 +275,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (emul_get_os() == EMUL_OS_OSX) SEND_STRING(SS_LCMD(SS_TAP(X_F4))); else SEND_STRING(SS_LWIN(SS_LALT(SS_TAP(X_K))));
       } break;
 
-    case HAPT_TGGL: if (record->event.pressed) haptic_module_toggle(); break;
+    case HAPT_TGGL: 
+      if (record->event.pressed) {
+        bool enabled = haptic_module_toggle();
+        if (enabled) leds_on_for_range(500, HS_GREEN, LED_LEFT, LED_LEFT+1); else leds_on_for_range(500, HS_RED, LED_LEFT, LED_LEFT+1);
+      } break;
+
     case HAPT_INC:  if (record->event.pressed) haptic_module_increase(); break;
     case HAPT_DEC:  if (record->event.pressed) haptic_module_decrease(); break;
     
@@ -293,9 +305,10 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     }
 
     //BOTTOM LED
-    if (layer_state_cmp(state,_1DK) || layer_state_cmp(state,_SDK)) {
+    /* if (layer_state_cmp(state,_1DK) || layer_state_cmp(state,_SDK)) {
       leds_seths_at(8,192, LED_BOTTOM);
-    } else if (layer_state_cmp(state,_COD)) {
+    } else */ 
+    if (layer_state_cmp(state,_COD)) {
       leds_seths_at(HS_GREEN, LED_BOTTOM);
     } else if (layer_state_cmp(state,_NUM)) {
       leds_seths_at(HS_PURPLE, LED_BOTTOM);
@@ -306,10 +319,25 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     }
 
     // LEFT LED
-    // Dedicated to mause layer --> layer_mouse_feedback
+    // Dedicated to mause layer and 1DK
+    bool led_right = false;
+    // 1DK led
+    if (layer_state_cmp(state,_1DK) || layer_state_cmp(state,_SDK)) {
+      switch(emul_get_os()) {
+        case EMUL_OS_OSX: leds_seths_at(HS_WHITE, LED_RIGHT); break;
+        case EMUL_OS_LINUX: leds_seths_at(HS_GREEN, LED_RIGHT); break;
+        case EMUL_OS_WIN: leds_seths_at(HS_BLUE, LED_RIGHT); break;
+      }
+      led_right = true;
+    }
+    // Mouse layer led
     if (layer_state_cmp(state,_MSE)) {
-      layer_mouse_feedback(true);
-    } 
+      //layer_mouse_feedback(true);
+      leds_seths_at(HS_RED, LED_RIGHT);
+      led_right = true;
+    }
+    // otherwise off
+    if (!led_right) leds_off_at(LED_RIGHT);
 
     return state;
 }
@@ -345,7 +373,7 @@ void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO C
   if (trackpoint_timer && (timer_elapsed(trackpoint_timer) > MOUSE_LAYER_TIMEOUT)) { //If the time of both the TP timer
     if (!tp_buttons) {
       layer_off(_MSE);
-      layer_mouse_feedback(false);
+      haptic_module_pulse_default();
       trackpoint_timer = 0; //Reset the timer again until the mouse moves more
       trackpoint_lock_dir = TP_FREE;
     }

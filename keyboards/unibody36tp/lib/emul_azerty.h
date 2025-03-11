@@ -172,6 +172,7 @@ enum custom_keycodes_emul {
     AZ_REPEAT_DEC,
     AZ_REPEAT_INC,
     AZ_NEXT_EMUL,
+    AZ_DETECT_OS,
 
     AZ_LAST_EMUL,
     NEW_SAFE_RANGE
@@ -204,6 +205,11 @@ typedef struct {
 /// @param os The OS to emulate (EMUL_OS_WIN, EMUL_OS_LINUX, EMUL_OS_OSX)
 void emul_set_os(emul_os_types os);
 
+/// @brief Detect OS throug QMK USB discovery, and set the emulated OS
+/// @param  none
+/// @return The detected OS (EMUL_OS_WIN, EMUL_OS_LINUX, EMUL_OS_OSX)
+emul_os_types emul_detect_os(void);
+
 /// @brief Switch to the next emualted OS
 /// @param none 
 void emul_set_next_emul(void);
@@ -217,12 +223,6 @@ emul_os_types emul_get_os(void);
 /// @param none
 /// @return The new state of the key repeatition (true = on, false = off)
 bool emul_toggle_repeat(void);
-
-/// @brief Callback to get the host OS through USB discovery (QMK OS detection)
-/// @param trigger_time 
-/// @param cb_arg (not used)
-/// @return 0 (never repeat)
-uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg);
 
 /// @brief internal function to invert keycodes according of the OS (as CTRL / COMMAND on OSX)
 /// @param state 

@@ -22,12 +22,13 @@ void haptic_module_pulse_defer(uint16_t delay) {
     if (haptic_module_enabled) defer_exec(delay, haptic_module_pulse_default_callback, NULL);
 }
 
-void haptic_module_toggle(void) {
+bool haptic_module_toggle(void) {
     haptic_module_enabled = !haptic_module_enabled;
     if (haptic_module_enabled) {
         haptic_module_pattern = DRV2605L_EFFECT_SHARP_TICK_1_100;
         haptic_module_pulse_default();
     }
+    return haptic_module_enabled;
 }
 
 void haptic_module_increase(void) {

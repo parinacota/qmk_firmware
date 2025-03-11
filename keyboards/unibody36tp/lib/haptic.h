@@ -6,7 +6,7 @@
 void haptic_module_pulse_default(void);
 void haptic_module_small_tick(void);
 void haptic_module_pulse_defer(uint16_t delay);
-void haptic_module_toggle(void);
+bool haptic_module_toggle(void);
 void haptic_module_increase(void);
 void haptic_module_decrease(void);
 

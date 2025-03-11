@@ -54,7 +54,7 @@ bool emul_toggle_repeat(void) {
     return _emul_repeat_enabled;
 }
 
-uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
+emul_os_types emul_detect_os(void) {
     os_variant_t os = detected_host_os();
     switch(os) {
         case OS_MACOS:
@@ -67,6 +67,11 @@ uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
         default:
             emul_set_os(EMUL_OS_WIN);
     }
+    return _emul_os_mode;
+}
+
+uint32_t _emul_get_host_os(uint32_t trigger_time, void *cb_arg) {
+    emul_detect_os();
     return 0;
 }
 
@@ -141,9 +146,9 @@ void emul_keyboard_post_init_user(void) {
     unregister_code(KC_LOPT);}
 
 #define COMMAND(A) {\
-    register_code(KC_LGUI);\
+    register_code(KC_LCMD);\
     A;\
-    unregister_code(KC_LGUI);}
+    unregister_code(KC_LCMD);}
 
 #define UNSHIFT(A) {\
     uint8_t _shifted = get_mods() & MOD_MASK_SHIFT;\
@@ -562,6 +567,7 @@ bool emul_process_record_user(uint16_t keycode, keyrecord_t *record) {
                 case AZ_REPEAT_DEC: _emul_repeat_delay = (_emul_repeat_delay > _EMUL_REPEAT_DELAY_MIN) ? _emul_repeat_delay - 10 : _EMUL_REPEAT_DELAY_MIN; break;
                 case AZ_REPEAT_INC: _emul_repeat_delay = (_emul_repeat_delay < _EMUL_REPEAT_DELAY_MAX) ? _emul_repeat_delay + 10 : _EMUL_REPEAT_DELAY_MAX; break;
                 case AZ_NEXT_EMUL: emul_set_next_emul(); break;
+                case AZ_DETECT_OS: emul_detect_os(); break;
             }
         } else {
             _emul_send_key(keycode);
