@@ -68,21 +68,72 @@ void leds_off_range(uint8_t start, uint8_t end) {
 }
 
 uint8_t effect_step = 0;
+uint16_t effect_delay = 500;
 static deferred_token effect_token = 0;
 
+uint32_t leds_jacks_effect(uint32_t trigger_time, void *cb_arg) {
+    switch (effect_step) {
+        case 0: //FR
+            rgblight_sethsv_at(HS_BLUE, 255, LED_LEFT);
+            rgblight_sethsv_at(HS_WHITE, 140, LED_BOTTOM);
+            rgblight_sethsv_at(HS_RED, 255, LED_RIGHT);
+            break;
+        case 1: //DE
+            rgblight_sethsv_at(HS_WHITE, 16, LED_LEFT);
+            rgblight_sethsv_at(HS_YELLOW, 192, LED_BOTTOM);
+            rgblight_sethsv_at(HS_RED, 255, LED_RIGHT);
+            break;
+        case 2: //IT
+            rgblight_sethsv_at(HS_GREEN, 192, LED_LEFT);
+            rgblight_sethsv_at(HS_WHITE, 140, LED_BOTTOM);
+            rgblight_sethsv_at(HS_RED, 255, LED_RIGHT);
+            break; 
+        case 3: //ES
+            rgblight_sethsv_at(HS_RED, 255, LED_LEFT);
+            rgblight_sethsv_at(HS_YELLOW, 192, LED_BOTTOM);
+            rgblight_sethsv_at(HS_RED, 255, LED_RIGHT);
+            break;
+        case 4: //LI
+            rgblight_sethsv_at(HS_YELLOW, 192, LED_LEFT);
+            rgblight_sethsv_at(HS_RED, 255, LED_BOTTOM);
+            rgblight_sethsv_at(HS_GREEN, 192, LED_RIGHT);
+            break; 
+        case 5: //AT
+            rgblight_sethsv_at(HS_RED, 255, LED_LEFT);
+            rgblight_sethsv_at(HS_WHITE, 140, LED_BOTTOM);
+            rgblight_sethsv_at(HS_RED, 255, LED_RIGHT);
+            break;
+    }
+    effect_step = (effect_step + 1) % 6;
+    if (/*effect_step == 0 &&*/ effect_delay > 10) {
+        effect_delay = effect_delay * 0.95;
+    }
+    return effect_delay;
+}
+
 uint32_t leds_gyro_callback(uint32_t trigger_time, void *cb_arg) {
-    rgblight_sethsv_at(HS_WHITE, 255, effect_step % 3);
+    rgblight_sethsv_at(HS_WHITE, 140, effect_step % 3);
     rgblight_sethsv_at(HS_BLUE, 255, (effect_step+1) % 3);
     rgblight_sethsv_at(HS_RED, 255, (effect_step+2) % 3);
     effect_step++;
-    return 300;
+    return effect_delay;
 }
-void leds_gyro_start(void) {
-    effect_step=0;
+
+void leds_anim_start(uint8_t effect_id) {
     if (effect_token != 0) cancel_deferred_exec(effect_token);
-    effect_token = defer_exec(1, leds_gyro_callback, NULL);
+    switch(effect_id) {
+        case 1:
+            effect_step = effect_step % 6;
+            effect_delay = 800;
+            effect_token = defer_exec(1, leds_jacks_effect, NULL); break;
+        default:
+            effect_step = effect_step % 3;
+            effect_delay = 200;
+            effect_token = defer_exec(1, leds_gyro_callback, NULL); break;
+    }
+    
 }
-void leds_gyro_stop(void) {
+void leds_anim_stop(void) {
     if (effect_token != 0) cancel_deferred_exec(effect_token);
     effect_token = 0;
 }

@@ -38,8 +38,8 @@ void leds_seths_at(uint8_t hue, uint8_t sat, uint8_t pos);
 void leds_off_at(uint8_t pos);
 void leds_seths_range(uint8_t hue, uint8_t sat, uint8_t start, uint8_t end);
 void leds_off_range(uint8_t start, uint8_t end);
-void leds_gyro_start(void);
-void leds_gyro_stop(void);
+void leds_anim_start(uint8_t effect_id);
+void leds_anim_stop(void);
 
 #endif
 

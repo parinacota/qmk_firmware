@@ -17,7 +17,7 @@ typedef enum tp_lock_dirs {
 } tp_lock_dirs_t;
 static tp_lock_dirs_t trackpoint_lock_dir;
 
-enum layers { _BAS, _SHF, _1DK, _SDK, _COD, _NUM, _FCT, _MSE };
+enum layers { _BAS, _SHF, _1DK, _SDK, _COD, _NUM, _FCT, _MSE, _OTH };
 
 enum custom_keycodes {
   MA_TOBASE = NEW_SAFE_RANGE,
@@ -31,6 +31,7 @@ enum custom_keycodes {
   HAPT_DEC,
   HAPT_TGGL,
   LED_FR,
+  LED_EU,
   AZ_LINUX
 };
 
@@ -66,17 +67,54 @@ void tap_dance_tap_hold_reset(tap_dance_state_t *state, void *user_data) {
     }
 }
 
+void dance_flsh_each(tap_dance_state_t *state, void *user_data) {
+  switch (state->count) {
+      case 1:
+          leds_seths_at(HS_RED, LED_LEFT); break;
+          break;
+      case 2:
+          leds_seths_at(HS_RED, LED_RIGHT); break;
+          break;
+      case 3:
+          leds_seths_at(HS_RED, LED_BOTTOM); break;
+          break;
+      case 4:
+          leds_off_at(LED_LEFT);
+          wait_ms(50);
+          leds_off_at(LED_RIGHT);
+          wait_ms(50);
+          leds_off_at(LED_BOTTOM);
+  }
+}
+
+// On the fourth tap, set the keyboard on flash state
+void dance_flsh_finished(tap_dance_state_t *state, void *user_data) {
+  if (state->count >= 4) {
+      //reset_keyboard();
+  }
+}
+
+// If the flash state didn't happen, then turn off LEDs, left to right
+void dance_flsh_reset(tap_dance_state_t *state, void *user_data) {
+  leds_off_at(LED_LEFT);
+  wait_ms(50);
+  leds_off_at(LED_RIGHT);
+  wait_ms(50);
+  leds_off_at(LED_BOTTOM);
+}
+
 #define ACTION_TAP_DANCE_TAP_HOLD(tap, hold) \
     { .fn = {NULL, tap_dance_tap_hold_finished, tap_dance_tap_hold_reset}, .user_data = (void *)&((tap_dance_tap_hold_t){tap, hold, 0}), }
 
 // Tap dance enums
-enum { TD1_CTL_GUI, TD2_BSPC_MS3};
+enum { TD1_CTL_GUI, TD2_BSPC_MS3, TD_SAFE_FLASH};
 
 // Tap Dance definitions
 tap_dance_action_t tap_dance_actions[] = {
   // Tap once for Escape, twice for Caps Lock
   [TD1_CTL_GUI] = EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(KC_LCTL, KC_LGUI),
   [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
+  [TD_SAFE_FLASH] = ACTION_TAP_DANCE_FN_ADVANCED(dance_flsh_each, dance_flsh_finished, dance_flsh_reset)
 };
 
 // ################ Utily #################
@@ -122,7 +160,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_BAS] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-AZ_Q,         AZ_C,         AZ_O,         AZ_P,         AZ_W,                                     AZ_J,         AZ_M,         AZ_D,         OSL(_1DK),    AZ_Y,   
+AZ_Q,         AZ_C,         AZ_O,         AZ_P,         AZ_W,                                     AZ_J,         AZ_M,         AZ_D,         OSL(_1DK),    LT(_OTH,AZ_Y),   
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
 AZ_A,         AZ_S,         AZ_E,         AZ_N,         AZ_F,                                     AZ_L,         AZ_R,         AZ_T,         AZ_I,         AZ_U,
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
@@ -199,7 +237,7 @@ QK_REBOOT,    AZ_DETECT_OS, LED_UP,       KC_BRIU,      KC_VOLU,                
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
 QK_BOOTLOADER,AZ_NEXT_EMUL, LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
-XXXXXXX,    AZ_REPEAT_TOGGLE,HAPT_TGGL,   LED_FR,       XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
+TD_SAFE_FLASH,AZ_REPEAT_TOGGLE,HAPT_TGGL,   XXXXXXX,      XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      KB_MICOFF,    XXXXXXX        
 //                                       +-------------+-------------+-------------+-------------+-------------+-------------+     
@@ -215,7 +253,20 @@ _______,      _______,      _______,      _______,      _______,                
 //-----------+-------------+-------------+-------------+=============+-------------+-------------+=============+-------------+-------------+-------------+-------------+
                                           _______,      _______,      _______,      _______,      MS_BTN1,      MS_BTN2        
 //                                       +-------------+=============+-------------+-------------+=============+-------------+     
+    ),
+
+    [_OTH] = LAYOUT_36keys(
+//-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
+_______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      _______,      XXXXXXX,   
+//-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
+_______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      _______,      LED_FR,
+//-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
+_______,      _______,      _______,      _______,      _______,                                  _______,      _______,      _______,      _______,      LED_EU,
+//-----------+-------------+-------------+-------------+=============+-------------+-------------+=============+-------------+-------------+-------------+-------------+
+                                          _______,      _______,      _______,      _______,      _______,      _______        
+//                                       +-------------+=============+-------------+-------------+=============+-------------+     
     )
+
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -287,7 +338,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case LED_UP:    if (record->event.pressed) leds_val_inc(); break;
     case LED_DOWN:  if (record->event.pressed) leds_val_dec(); break;
     
-    case LED_FR:    if (record->event.pressed) leds_gyro_start(); else leds_gyro_stop(); break;
+    case LED_FR:    if (record->event.pressed) leds_anim_start(0); else leds_anim_stop(); break;
+    case LED_EU:    if (record->event.pressed) leds_anim_start(1); else leds_anim_stop(); break;
 
     case QK_BOOTLOADER: if (record->event.pressed) { leds_seths_range(HS_ORANGE,0,LED_COUNT); } break;
   }
