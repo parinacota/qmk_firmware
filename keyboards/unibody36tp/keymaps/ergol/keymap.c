@@ -152,7 +152,7 @@ void keyboard_post_init_user(void) {
 }
 
 bool process_detected_host_os_kb(os_variant_t detected_os) {
-  leds_on_for_at(500,HS_WHITE,LED_RIGHT);
+  //leds_on_for_at(500,HS_WHITE,LED_RIGHT);
   return true;
 }
 
@@ -275,7 +275,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   //release MOUSE layer if any other key is pressed
   if (trackpoint_timer && keycode!=MS_BTN1 && keycode!=MS_BTN2 && keycode!=MS_BTN3 && record->event.pressed) { 
       layer_off(_MSE);
-      haptic_module_pulse_default();
+      //haptic_module_pulse_default();
+      haptic_module_double_tick();
       //unregister_code(MS_BTN1);
       //unregister_code(MS_BTN2);
       //unregister_code(MS_BTN3);
@@ -362,10 +363,12 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     } else */ 
     if (layer_state_cmp(state,_COD)) {
       leds_seths_at(HS_GREEN, LED_BOTTOM);
-    } else if (layer_state_cmp(state,_NUM)) {
+    } else if (layer_state_cmp(state, _NUM)) {
+      haptic_module_small_tick();
       leds_seths_at(HS_PURPLE, LED_BOTTOM);
     } else if (layer_state_cmp(state,_FCT)) {
       leds_seths_at(HS_YELLOW, LED_BOTTOM);
+      haptic_module_pulse_default();
     } else {
       leds_off_at(LED_BOTTOM);
     }
@@ -425,7 +428,8 @@ void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO C
   if (trackpoint_timer && (timer_elapsed(trackpoint_timer) > MOUSE_LAYER_TIMEOUT)) { //If the time of both the TP timer
     if (!tp_buttons) {
       layer_off(_MSE);
-      haptic_module_pulse_default();
+      //haptic_module_pulse_default();
+      haptic_module_double_tick();
       trackpoint_timer = 0; //Reset the timer again until the mouse moves more
       trackpoint_lock_dir = TP_FREE;
     }

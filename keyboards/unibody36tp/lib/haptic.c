@@ -13,6 +13,11 @@ void haptic_module_small_tick(void) {
     if (haptic_module_enabled) drv2605l_pulse(DRV2605L_EFFECT_SHARP_TICK_3_60);
 }
 
+void haptic_module_double_tick(void) {
+    if (haptic_module_enabled) drv2605l_pulse(DRV2605L_EFFECT_SHORT_DOUBLE_SHARP_TICK_3_60);
+}
+
+
 uint32_t haptic_module_pulse_default_callback(uint32_t trigger_time, void *cb_arg) {
     haptic_module_pulse_default();
     return 0; 
