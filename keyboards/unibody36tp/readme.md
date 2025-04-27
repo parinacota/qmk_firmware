@@ -37,7 +37,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
     - Motifs sur les pouces pour aider à détecter un décalage
     - Petite surépaisseur au niveau du connecteur Choc pour éviter le bruit de l'impact à ce niveau (et rester silencieux)
     - Impression chez JLC3DP (MJF / PA12-HP Nylon / Dyeing-Dyed Black), le rendu est juste génial, à la fois légèrement granuleux, mais bien lisse et d'un noir d'encre. Env. 20€ pour un set de touches, transport compris.
-    - Adoptées en 15 minutes, les mains se places maintenant automatiquement sur le clavier, c'est génial!
+    - Adoptées en 15 minutes, les mains se placent maintenant automatiquement sur le clavier, c'est génial!
     
 **Configuration QMK:**
 - Configuration très inspirée de l'**Ergo-L** (https://ergol.org), avec quelques adpatations:
@@ -83,6 +83,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
 - Clavier fini
 ![](doc/unibody36tp_1.jpeg)
 ![](doc/unibody36tp_3.jpeg)
+![](doc/unibody36tp_leds.jpg)
 ![](doc/unibody36tp_dessous.jpeg)
 
 **Inspiration et remerciements :**

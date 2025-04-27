@@ -129,17 +129,6 @@ void emul_notify_event_callback(emul_event_t ev) {
   }
 }
 
-/*
-void layer_mouse_feedback(bool enabled) {
-  if (enabled) {
-    leds_seths_at(HS_RED, LED_RIGHT);
-  } else {
-    haptic_module_pulse_default();
-    // LEDS turned off by layer callback
-  }
-}
-*/
-
 // ######## QMK routines ########
 void keyboard_pre_init_user(void) {
   //RESET PS2
@@ -373,8 +362,8 @@ layer_state_t layer_state_set_user(layer_state_t state) {
       leds_off_at(LED_BOTTOM);
     }
 
-    // LEFT LED
-    // Dedicated to mause layer and 1DK
+    // RIGHT LED
+    // Dedicated to mouse layer and 1DK
     bool led_right = false;
     // 1DK led
     if (layer_state_cmp(state,_1DK) || layer_state_cmp(state,_SDK)) {
@@ -387,7 +376,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     }
     // Mouse layer led
     if (layer_state_cmp(state,_MSE)) {
-      //layer_mouse_feedback(true);
       leds_seths_at(HS_RED, LED_RIGHT);
       led_right = true;
     }
