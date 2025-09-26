@@ -1,7 +1,7 @@
 ## gSender Remote
 
-![](doc/gSenderRemote.png){height=500} ![](doc/telco.jpg){height=500}
 
+<img src="doc/gSenderRemote.png" alt="drawing" height="500"/><img src="doc/telco.jpg" alt="drawing" height="500"/>
 
 Remote for gSender that acts as a Keyboard and a Joystick for the application. Could be used by any application that supports keyboard shortcuts and Joystick movements.
 
