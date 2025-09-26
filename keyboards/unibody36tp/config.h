@@ -37,8 +37,11 @@
 // PS2
 #define PS2RESETPIN GP14
 #define PS2_MOUSE_ROTATE 270
-#define MOUSE_LAYER_TIMEOUT 1000
-#define PS2_MOUSE_USE_2_1_SCALING
+#define MOUSE_LAYER_TIMEOUT 800 // 800ms before the mouse layer is turned off
+#define PS2_MOUSE_USE_2_1_SCALING    
+#define PS2_MOUSE_SCROLL_DIVISOR_V 32
+#define PS2_MOUSE_SCROLL_DIVISOR_H 64
+
 
 
 

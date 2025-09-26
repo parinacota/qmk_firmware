@@ -1,3 +1,4 @@
+CONSOLE_ENABLE = no
 # This file intentionally left blank
 OS_DETECTION_ENABLE = yes
 DEFERRED_EXEC_ENABLE = yes
@@ -15,7 +16,6 @@ KEYBOARD_SHARED_EP = yes
 UNICODE_COMMON = yes
 
 SRC += lib/trackpoint.c lib/leds.c lib/haptic.c lib/emul_azerty.c
-
 
 
 

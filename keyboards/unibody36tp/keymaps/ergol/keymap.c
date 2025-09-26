@@ -5,10 +5,11 @@
 #include <lib/leds.h>
 #include <lib/haptic.h>
 #include <lib/trackpoint.h>
-
+#include "print.h"
 #include <lib/emul_azerty.h>
 
 static uint16_t trackpoint_timer;
+static uint16_t keystroke_timer;
 extern int tp_buttons; // mousekey button state set in action.c and used in ps2_mouse.c
 typedef enum tp_lock_dirs {
   TP_FREE,
@@ -225,7 +226,7 @@ A(KC_TAB),    AZ_LPRN,      AZ_RPRN,      AZ_CIR,       AZ_GRV,                 
 QK_REBOOT,    AZ_DETECT_OS, LED_UP,       KC_BRIU,      KC_VOLU,                                  KC_F1,        KC_F2,        KC_F3,        KC_F4,        KC_F5,   
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
 QK_BOOTLOADER,AZ_NEXT_EMUL, LED_DOWN,     KC_BRID,      KC_VOLD,                                  KC_F6,        KC_F7,        KC_F8,        KC_F9,        KC_F10,  
-//-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
+//----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
 TD_SAFE_FLASH,AZ_REPEAT_TOGGLE,HAPT_TGGL,   XXXXXXX,      XXXXXXX,                                  KC_F11,       KC_F12,       XXXXXXX,      XXXXXXX,      KC_PSCR,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
                                           XXXXXXX,      XXXXXXX,      XXXXXXX,      KC_MUTE,      KB_MICOFF,    XXXXXXX        
@@ -258,17 +259,17 @@ _______,      _______,      _______,      _______,      _______,                
 
 };
 
+//bool mouse_btn1_registered = false;
+//bool mouse_btn2_registered = false;
+//bool mouse_btn3_registered = false;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   tap_dance_action_t *action;
 
   //release MOUSE layer if any other key is pressed
   if (trackpoint_timer && keycode!=MS_BTN1 && keycode!=MS_BTN2 && keycode!=MS_BTN3 && record->event.pressed) { 
       layer_off(_MSE);
-      //haptic_module_pulse_default();
       haptic_module_double_tick();
-      //unregister_code(MS_BTN1);
-      //unregister_code(MS_BTN2);
-      //unregister_code(MS_BTN3);
       trackpoint_timer = 0; //Reset the timer again until the mouse moves more
   }
 
@@ -277,10 +278,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) haptic_module_pulse_default();
     trackpoint_timer = timer_read(); 
     //enable _NUM when MS_BTN1 is hold
-    if (keycode == MS_BTN1) {
-      if (record->event.pressed) layer_on(_NUM);
-      else layer_off(_NUM);
-    }
+    //if (keycode == MS_BTN1) {
+    //  if (record->event.pressed) layer_on(_NUM);1234
+    //else layer_off(_NUM);
+  //}
+  }
+
+  if (record->event.pressed && !(keycode == MS_BTN1 || keycode == MS_BTN2 || keycode == MS_BTN3)) {
+    keystroke_timer = timer_read();
   }
 
   //KEYS
@@ -333,11 +338,17 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     case QK_BOOTLOADER: if (record->event.pressed) { leds_seths_range(HS_ORANGE,0,LED_COUNT); } break;
   }
+  //printf("Keycode: %04X, pressed: %d\n", keycode, record->event.pressed);
   return true;
 }
 
 // LED for some layers
 layer_state_t layer_state_set_user(layer_state_t state) {
+
+  //("Layer state: Base:%d Shift:%d 1DK:%d SDK:%d COD:%d NUM:%d FCT:%d MSE:%d\n", layer_state_cmp(state,_BAS), layer_state_cmp(state,_SHF), 
+  //       layer_state_cmp(state,_1DK), layer_state_cmp(state,_SDK), layer_state_cmp(state,_COD), 
+  //       layer_state_cmp(state,_NUM), layer_state_cmp(state,_FCT), layer_state_cmp(state,_MSE));
+
     leds_off_range(0, LED_COUNT);
     // LEFT LED
     if (/*layer_state_cmp(state,_SHF) ||*/ layer_state_cmp(state,_SDK)) {
@@ -386,30 +397,42 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 }
 
 void ps2_mouse_moved_user(report_mouse_t *mouse_report) { // Whenever the TrackPoint starts moving, check if the timer exists.
-    if (trackpoint_timer) {
-        trackpoint_timer = timer_read();
-    } else {
-        if (!tp_buttons) { //I'm still a bit confused about this one, but I believe it checks that if the mousekey state isn't set, turn on this layer specified?
-            layer_on(_MSE);
-            trackpoint_timer = timer_read();
-        }
-    }
-    //lock H or V if _COD is enabled
-    if (layer_state_is(_COD)) {
-      if (trackpoint_lock_dir == TP_FREE) {
-        if (abs(mouse_report->x) > abs(mouse_report->y))
-          trackpoint_lock_dir = TP_LOCK_H;
-        else
-          trackpoint_lock_dir = TP_LOCK_V;
+  if (keystroke_timer && (timer_elapsed(keystroke_timer) < 200)) { // If the mouse was moved by a keypress, don't move the mouse
+    mouse_report->x = 0; // If the mouse was moved by a keypress, don't move the mouse
+    mouse_report->y = 0; // If the mouse was moved by a keypress, don't move the mouse
+    return;
+  }
+
+  // scroll wheel
+  mouse_report->h = 0; // Disable horizontal scroll
+  //invert vertical scroll under macOS
+  if (mouse_report->v != 0 && emul_get_os() == EMUL_OS_OSX) {
+      mouse_report->v = -mouse_report->v;
+  }
+
+  if (trackpoint_timer) {
+      trackpoint_timer = timer_read();
+  } else {
+      if (!tp_buttons) { //I'm still a bit confused about this one, but I believe it checks that if the mousekey state isn't set, turn on this layer specified?
+          layer_on(_MSE);
+          trackpoint_timer = timer_read();
       }
-    } else {
-      trackpoint_lock_dir = TP_FREE;
+  }
+  //lock H or V if _COD is enabled
+  if (layer_state_is(_COD)) {
+    if (trackpoint_lock_dir == TP_FREE) {
+      if (abs(mouse_report->x) > abs(mouse_report->y))
+        trackpoint_lock_dir = TP_LOCK_H;
+      else
+        trackpoint_lock_dir = TP_LOCK_V;
     }
+  } else {
+    trackpoint_lock_dir = TP_FREE;
+  }
 
-    //if locked
-    if (trackpoint_lock_dir == TP_LOCK_H) mouse_report->y = 0;
-    if (trackpoint_lock_dir == TP_LOCK_V) mouse_report->x = 0;
-
+  //if locked
+  if (trackpoint_lock_dir == TP_LOCK_H) mouse_report->y = 0;
+  if (trackpoint_lock_dir == TP_LOCK_V) mouse_report->x = 0;
 }
 
 void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO CHECK CLOCK RUNTIMES OVER THE DURATION THAT THE KEYBOARD IS POWERED ON

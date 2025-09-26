@@ -1,0 +1,49 @@
+{
+    "manufacturer": "parinacota",
+    "keyboard_name": "pendant_cnc",
+    "maintainer": "parinacota",
+    "bootloader": "rp2040",
+    "diode_direction": "COL2ROW",
+    "features": {
+        "console": false,
+        "extrakey": true,
+        "nkro": true
+    },
+    "matrix_pins": {
+        "direct": [["GP2", "GP3", "GP4",   "GP5", "GP6", "GP7",   "GP8", "GP28",   "GP9", "GP10", "GP11"]]
+    },
+    "encoder": {
+        "enabled": true,
+        "rotary": [
+            { "pin_a": "GP19", "pin_b": "GP20", "resolution": 4 },
+            { "pin_a": "GP21", "pin_b": "GP22", "resolution": 2 }
+        ]
+    }
+    "processor": "RP2040",
+    "url": "",
+    "usb": {
+        "device_version": "1.0.0",
+        "pid": "0x23B0",
+        "vid": "0xC1ED"
+    },
+    "layouts": {
+        "LAYOUT_cnc": {
+            "layout": [
+                {"matrix": [0, 0], "x": 0, "y": 0},
+                {"matrix": [0, 1], "x": 1, "y": 0},
+                {"matrix": [0, 2], "x": 2, "y": 0},
+
+                {"matrix": [0, 3], "x": 1, "y": 1},
+                {"matrix": [0, 4], "x": 2, "y": 1},
+                {"matrix": [0, 5], "x": 3, "y": 1},
+
+                {"matrix": [0, 6], "x": 1, "y": 2},
+                {"matrix": [0, 7], "x": 3, "y": 2},
+
+                {"matrix": [0, 8], "x": 1, "y": 3},
+                {"matrix": [0, 9], "x": 2, "y": 3},
+                {"matrix": [0, 10], "x": 3, "y": 3}
+            ]
+        }
+    }
+}
