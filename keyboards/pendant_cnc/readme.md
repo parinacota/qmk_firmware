@@ -1,11 +1,11 @@
 ## gSender Remote
 
-![](doc/telco.jpg)
-![](doc/gSenderRemote.png)
+![](doc/gSenderRemote.png){height=500} ![](doc/telco.jpg){height=500}
+
 
 Remote for gSender that acts as a Keyboard and a Joystick for the application. Could be used by any application that supports keyboard shortcuts and Joystick movements.
 
-Made with :
+#### Parts :
 - a RP2040 board (pi pico)
 - a 100 step rotary encoder (for Jogging in X, Y or Z)
 - a standard rotary encoder (for selecting the jog preset: precise, normal or rapid)
