@@ -25,6 +25,7 @@
 #define CNC_SET_Z_0         S(FR_R)
 #define CNC_UNLOCK          FR_DLR
 
+#define PROFILE_SEND_TIMEOUT 30000 //resend profile selection after 30 seconds
 
 #include QMK_KEYBOARD_H
 #include "print.h"
@@ -67,6 +68,8 @@ enum keycodes {
   KC_STOP_JOB,
   KC_DO_PROBE,
   KC_DO_HOMING,
+
+  KC_LED_QKBOOT,
 };
 
 // ****************************** AXIS ****************
@@ -85,6 +88,7 @@ void select_axis(axis_selection_t a) {
 }
 
 // ****************** STEPS SELECTION ****************
+static uint32_t profile_last_use = 0; 
 typedef enum STEPS_SELECTION {
   PROFILE_PRECISE,
   PROFILE_NORMAL,
@@ -94,6 +98,7 @@ steps_selection_t profile_selection;
 
 void select_profile(steps_selection_t s) {
   profile_selection = s;
+  profile_last_use = timer_read32();
   switch (profile_selection) {
     case PROFILE_PRECISE:  tap_code16(CNC_PRESET_PRECISE); break;
     case PROFILE_NORMAL: tap_code16(CNC_PRESET_NORMAL); break;
@@ -130,6 +135,18 @@ void profile_dec(void) {
   }
 }
 
+void profile_check(void) {
+  if (timer_elapsed32(profile_last_use) > PROFILE_SEND_TIMEOUT) {
+    select_profile(profile_selection);
+  }
+}
+
+uint32_t profile_callback(uint32_t trigger_time, void *cb_arg) {
+    /* do something */
+    select_profile(profile_selection);
+    return 0;
+}
+
 // ********* JOYSTICK *******
 joystick_config_t joystick_axes[JOYSTICK_AXIS_COUNT] = {
   JOYSTICK_AXIS_IN(JOYSTICK_X, 788, 430, 100),
@@ -146,13 +163,13 @@ void keyboard_pre_init_user(void) {
   setPinOutput(LED_X);
   setPinOutput(LED_Y);
   setPinOutput(LED_Z);
-  // default values
-  select_axis(AXIS_X);
-  select_profile(PROFILE_NORMAL);
 }
 
 void keyboard_post_init_user(void) {
-  // nothing
+  // default values
+  select_axis(AXIS_X);
+  select_profile(PROFILE_NORMAL);
+  defer_exec(300, profile_callback, NULL);
 }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -160,14 +177,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_DFT] = LAYOUT_cnc(
       LT(0,KC_START_JOB),     LT(0,KC_PAUSE_JOB),     LT(0,KC_STOP_JOB),
       LT(0,KC_DO_HOMING),     KC_NO,                  LT(0,KC_DO_PROBE), 
-      LT(_ZERO, CNC_JOG_STOP),                        KC_NO,    
+      LT(_ZERO, 0),                                   KC_NO,    
       LT(0,KC_AXIS_X),        LT(0,KC_AXIS_Y),        LT(0,KC_AXIS_Z)    
     ),
 
     [_ZERO] = LAYOUT_cnc(
-      XXXXXXX,                XXXXXXX,                XXXXXXX,   
+      XXXXXXX,                XXXXXXX,                CNC_UNLOCK,   
       XXXXXXX,                XXXXXXX,                XXXXXXX, 
-      _______,                                        QK_BOOT,    
+      _______,                                        KC_LED_QKBOOT,    
       KC_SETZERO_X,           KC_SETZERO_Y,           KC_SETZERO_Z    
     )
 };
@@ -188,6 +205,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
       // MAIN ENCODER
       case ENC_100_PLUS:
+        profile_check();
         switch (axis_selection) {
           case AXIS_X: tap_code16(CNC_JOG_X_PLS); break;
           case AXIS_Y: tap_code16(CNC_JOG_Y_PLS); break;
@@ -195,6 +213,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
         return true;
       case ENC_100_MINUS:
+        profile_check();
         switch (axis_selection) {
           case AXIS_X: tap_code16(CNC_JOG_X_MNS); break;
           case AXIS_Y: tap_code16(CNC_JOG_Y_MNS); break;
@@ -225,6 +244,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         return false;
 
       // SET ZERO X, Y and Z
+      case LT(_ZERO, 0):
+        if (record->tap.count) { tap_code16(CNC_JOG_STOP); return false;}
+        return true;
       case KC_SETZERO_X:
         tap_code16(CNC_SET_X_0);
         gpio_write_pin(LED_X, false);
@@ -254,13 +276,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
       // HOMING and PROBE
       case LT(0,KC_DO_HOMING):
-        if (record->tap.count) tap_code16(CNC_GOTO_XY0) // Intercept tap function 
+        if (record->tap.count) tap_code16(CNC_GOTO_XY0); // Intercept tap function 
         else tap_code16(CNC_DO_HOMING);                 // Intercept hold function 
         return false;
       case LT(0,KC_DO_PROBE):
         if (record->tap.count) {} // Intercept tap function 
         else tap_code16(CNC_DO_PROBE);               // Intercept hold function 
         return false;
+
+        case KC_LED_QKBOOT:
+          gpio_write_pin(LED_SMALL_MOVE, true);
+          gpio_write_pin(LED_MEDIUM_MOVE, true);
+          gpio_write_pin(LED_LARGE_MOVE, true);
+          bootloader_jump();
+          return true;
         
     }
   }
