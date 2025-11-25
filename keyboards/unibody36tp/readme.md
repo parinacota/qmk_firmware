@@ -91,3 +91,10 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
 - Pour l'intégration PS2, j'ai suivi le beau projet d'un clavier split sous ZMK: https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver
 - La classe et la simplicité du clavier de TeXitoi (magnifique!): https://github.com/TeXitoi/keymini.
 
+**Après 6 mois**
+- Toujours mon clavier principal pour travailler, tous les jours :-)
+- À l’usage, petit conflit avec l’activation de la layer « num » (en violet) et avec la layer automatique de la souris (par ex sous Excel, après un déplacement de souris et sélection d’une cellule, la layer souris reste active pour 1 seconde… et bloque la saisie immédiate de texte)
+- Quelques enchaînements pas très pratique (chiffres dans des majuscules par ex), mais rien de trop pénalisant
+- Je teste depuis ce jour une réorganisation de la layer « CODE » (en vert) avec le numpad sur la droite (et avec déplacement de toutes les touches de direction dans une layer « DIR » qui remplace la layer « NUM ». N’étant pas sûr de ma préférence, j’ai fait une keymap différente « ergol2 » pour cela:
+![](doc/unibody36tp_ergol2.png)
+À voir si cela corrige les petits soucis !
