@@ -94,7 +94,7 @@ Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https:
 **Après 6 mois**
 - Toujours mon clavier principal pour travailler, tous les jours :-)
 - À l’usage, petit conflit avec l’activation de la layer « num » (en violet) et avec la layer automatique de la souris (par ex sous Excel, après un déplacement de souris et sélection d’une cellule, la layer souris reste active pour 1 seconde… et bloque la saisie immédiate de texte)
-- Quelques enchaînements pas très pratique (chiffres dans des majuscules par ex), mais rien de trop pénalisant
-- Je teste depuis ce jour une réorganisation de la layer « CODE » (en vert) avec le numpad sur la droite (et avec déplacement de toutes les touches de direction dans une layer « DIR » qui remplace la layer « NUM ». N’étant pas sûr de ma préférence, j’ai fait une keymap différente « ergol2 » pour cela:
+- Quelques enchaînements pas très pratiques (chiffres dans des majuscules par ex), mais rien de trop pénalisant
+- Je teste depuis ce jour une réorganisation de la layer « CODE » (en vert) avec le numpad sur la droite (et avec déplacement de toutes les touches de direction dans une layer « DIR » qui remplace la layer « NUM »). N’étant pas sûr de ma préférence, j’ai fait une keymap différente « ergol2 » :
 ![](doc/unibody36tp_ergol2.png)
-À voir si cela corrige les petits soucis !
+Mon clavier est maintenant configuré comme cela, à voir à l’usage !
