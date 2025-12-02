@@ -109,7 +109,7 @@ enum {
   TD1_CTL_GUI, 
   TD2_BSPC_MS3,
   TD_SAFE_FLASH,
-  TD4_Q_ESC,
+  TD4_J_ESC,
   TD5_COMM_DOT,
   TD6_QUOT_GRV,
 };
@@ -119,7 +119,7 @@ tap_dance_action_t tap_dance_actions[] = {
   [TD1_CTL_GUI] = EMUL_ACTION_TAP_DANCE_DOUBLE_INVERT_OSX(KC_LCTL, KC_LGUI),
   [TD2_BSPC_MS3] = ACTION_TAP_DANCE_TAP_HOLD(KC_BSPC, MS_BTN3),
   [TD_SAFE_FLASH] = ACTION_TAP_DANCE_FN_ADVANCED(dance_flsh_each, dance_flsh_finished, dance_flsh_reset),
-  [TD4_Q_ESC] = ACTION_TAP_DANCE_DOUBLE(AZ_Q, KC_ESC),
+  [TD4_J_ESC] = ACTION_TAP_DANCE_DOUBLE(AZ_J, KC_ESC),
   [TD5_COMM_DOT] = ACTION_TAP_DANCE_DOUBLE(AZ_COMM, AZ_DOT),
   [TD6_QUOT_GRV] = ACTION_TAP_DANCE_DOUBLE(AZ_QUOT, AZ_GRV),
 
@@ -157,7 +157,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_BAS] = LAYOUT_36keys(
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
-TD(TD4_Q_ESC), AZ_C,        AZ_O,         AZ_P,         AZ_W,                                     AZ_J,         AZ_M,         AZ_D,         OSL(_1DK),    LT(_OTH,AZ_Y),   
+AZ_Q,         AZ_C,        AZ_O,         AZ_P,         AZ_W,                                     TD(TD4_J_ESC), AZ_M,         AZ_D,         OSL(_1DK),    LT(_OTH,AZ_Y),   
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
 AZ_A,         AZ_S,         AZ_E,         AZ_N,         AZ_F,                                     AZ_L,         AZ_R,         AZ_T,         AZ_I,         AZ_U,
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
@@ -232,7 +232,7 @@ A(KC_TAB),    AZ_SML1,      AZ_SML2,      AZ_SML3,      XXXXXXX,                
 //-----------+-------------+-------------+-------------+-------------+                           +-------------+-------------+-------------+-------------+-------------+
 QK_REBOOT,    AZ_DETECT_OS, LED_UP,       KC_BRIU,      KC_VOLU,                                  XXXXXXX,      KC_F7,        KC_F8,        KC_F9,        KC_F10,   
 //-----------+-------------+-------------+=============+-------------+                           +-------------+=============+-------------+-------------+-------------+ 
-QK_BOOTLOADER,AZ_NEXT_EMUL, LED_DOWN,     KC_BRID,      KC_VOLD,                                  XXXXXXX,      KC_F4,        KC_F5,        KC_F6,        KC_F11,  
+/*QK_BOOTLOADER*/XXXXXXX,AZ_NEXT_EMUL,LED_DOWN,KC_BRID, KC_VOLD,                                  XXXXXXX,      KC_F4,        KC_F5,        KC_F6,        KC_F11,  
 //----------+-------------+-------------+=============+-------------+                            +-------------+=============+-------------+-------------+-------------+ 
 TD(TD_SAFE_FLASH),AZ_REPEAT_TOGGLE,HAPT_TGGL,XXXXXXX,   XXXXXXX,                                  KC_PSCR,      KC_F1,        KC_F2,        KC_F3,        KC_F12,  
 //-----------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
@@ -460,5 +460,16 @@ void matrix_scan_user(void) {  // ALWAYS RUNNING VOID FUNCTION, CAN BE USED TO C
 //disable haptic for all keys (used only when leaving mouse layer)
 bool get_haptic_enabled_key(uint16_t keycode, keyrecord_t *record) {
   return false;
+}
+
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case TD(TD4_J_ESC):
+            return 140;
+        case TD(TD_SAFE_FLASH):
+          return 500;
+        default:
+          return TAPPING_TERM;
+    }
 }
 

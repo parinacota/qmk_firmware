@@ -7,7 +7,8 @@
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_TIMEOUT 400U // Timeout window in ms in which the double tap can occur.
 
 #define TAPPING_TOGGLE 2
-#define TAPPING_TERM 180
+#define TAPPING_TERM_PER_KEY
+#define TAPPING_TERM 200
 #define PERMISSIVE_HOLD
 
 #define NO_USB_STARTUP_CHECK
