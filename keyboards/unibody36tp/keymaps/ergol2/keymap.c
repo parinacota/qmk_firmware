@@ -468,6 +468,8 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
             return 140;
         case TD(TD_SAFE_FLASH):
           return 500;
+        case LALT_T(AZ_Z):
+          return 300;
         default:
           return TAPPING_TERM;
     }
