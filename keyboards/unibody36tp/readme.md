@@ -2,7 +2,7 @@
 ## unibody36tp
 
 ![](doc/unibody36tp_2.jpeg)
-![](doc/unibody36tp_ergol.excalidraw.png)
+![](doc/unibody36tp_ergol2.excalidraw.png)
 
 Clavier filaire custom 36 touches low-profile, layout proche de l'Ergo-L (https://ergol.org), avec intégration d'un trackpoint PS2 d'un thinkpad Lenovo.
 
